@@ -1,4 +1,4 @@
-//#include "headers.h"
+#include "headers.h"
 #include<stdio.h>
 #include<stdlib.h>
 #include<signal.h>
@@ -14,6 +14,8 @@ struct processData
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    destroyClk(true);
+    killpg(getpgrp(), SIGKILL);
 }
 
 int main(int argc, char *argv[])
@@ -55,28 +57,39 @@ int main(int argc, char *argv[])
     int algoArgs;
     int pid;
     if(algoNum == 5)
-    algoArgs = atoi(argv[3]);
+        algoArgs = atoi(argv[3]);
     // 3. Initiate and create the scheduler and clock processes.
 
     // initialize the clock
     pid = fork();
     if(pid == 0)
-    execl("./clk.out");
-
+        execlp("/home/ammar/Desktop/Operating-system-simulator/c.out","c.out",(char *)NULL);
     // initialize the scheduler
     pid = fork();
     if(pid == 0)
-    execl("./scheduler.out");
+        execlp("/home/ammar/Desktop/Operating-system-simulator/s.out","s.out",(char *)NULL);
     // 4. Use this function after creating the clock process to initialize clock.
     initClk();
     // To get time use this function. 
-    ///int x = getClk();
-    ///printf("Current Time is %d\n", x);
+    int x = getClk();
+    printf("Current Time is %d\n", x);
     // TODO Generation Main Loop
+    int i=0;
+    while (true) //condition that processes are all done
+    {
+        
+        x = getClk();
+        //printf("%d \n", x-prcsArray[i].arrivaltime);
+        if (x == (prcsArray[i].arrivaltime))
+        {
+            printf("Process %d Started Now", prcsArray[i++].id);
+        }
+        //ssleep(0.5);
+    }
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     // 7. Clear clock resources
-    ///destroyClk(true);
+    destroyClk(true);
     return 0;
 }
 
