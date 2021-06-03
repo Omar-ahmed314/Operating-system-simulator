@@ -1,5 +1,6 @@
 //#include "headers.h"
 #include<stdio.h>
+#include<stdlib.h>
 #include<signal.h>
 struct processData
 {
@@ -17,29 +18,57 @@ void clearResources(int signum)
 
 int main(int argc, char *argv[])
 {
-    printf("hi");
     signal(SIGINT, clearResources);
     // TODO Initialization
     // 1. Read the input files.
-    struct processData* first;
-    FILE * prcs;
-    
-    prcs = fopen("processes.txt", "r");
-    
+    struct processData* prcsArray;
+
+    // open the process file
+    FILE * prcsFile;
+    prcsFile = fopen(argv[1], "r");
+
+    // count the process of the file
     int count = 0;
-    char * first_line;
-    fgets(first_line, 100, prcs);
-    
-    while(!feof(prcs))
+    char first_line[50];
+    fgets(first_line, 100, prcsFile);
+    while(!feof(prcsFile))
     {
-        fgets(first_line, 100, prcs);
+        fgets(first_line, 100, prcsFile);
         count++;
     }
-    printf("%d ", count);
+
+    // initialize the process array with calloc
+    prcsArray = (struct processData*)calloc(count, sizeof(struct processData));
+    fclose(prcsFile);
+    
+    prcsFile = fopen(argv[1], "r");
+
+    char second_line[50];
+    fgets(second_line, 100, prcsFile);
+    for(int i = 0; i < count; i++)
+    {
+        fscanf(prcsFile, "%d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority);
+    }
+    
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
+    int algoNum = atoi(argv[2]);
+    int algoArgs;
+    int pid;
+    if(algoNum == 5)
+    algoArgs = atoi(argv[3]);
     // 3. Initiate and create the scheduler and clock processes.
+
+    // initialize the clock
+    pid = fork();
+    if(pid == 0)
+    execl("./clk.out");
+
+    // initialize the scheduler
+    pid = fork();
+    if(pid == 0)
+    execl("./scheduler.out");
     // 4. Use this function after creating the clock process to initialize clock.
-    ///initClk();
+    initClk();
     // To get time use this function. 
     ///int x = getClk();
     ///printf("Current Time is %d\n", x);
