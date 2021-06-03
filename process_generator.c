@@ -1,7 +1,4 @@
 #include "headers.h"
-#include<stdio.h>
-#include<stdlib.h>
-#include<signal.h>
 struct processData
 {
     int arrivaltime;
@@ -10,10 +7,27 @@ struct processData
     int id;
 };
 
+int cid, downq_id, upq_id, send_val, rec_val;
+
+struct msgbuff
+{
+    int mtype;
+    struct processData processData;
+};
+
+struct msgbuff2
+{
+    int mtype;
+    int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
+};
+
 //void clearResources(int);
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    msgctl(downq_id, IPC_RMID, (struct msqid_ds *)0);
+    msgctl(upq_id, IPC_RMID, (struct msqid_ds *)0);
+    kill(cid, SIGINT);
     destroyClk(true);
     killpg(getpgrp(), SIGKILL);
 }
@@ -21,6 +35,23 @@ void clearResources(int signum)
 int main(int argc, char *argv[])
 {
     signal(SIGINT, clearResources);
+    key_t key_id;
+    
+    key_id = 99;
+    downq_id = msgget(key_id, 0666 | IPC_CREAT);
+    upq_id = msgget(key_id, 0666 | IPC_CREAT);
+    struct msgbuff message;
+    if (downq_id == -1)
+    {
+        perror("Error in create");
+        exit(-1);
+    }
+     if (upq_id == -1)
+    {
+        perror("Error in create");
+        exit(-1);
+    }
+
     // TODO Initialization
     // 1. Read the input files.
     struct processData* prcsArray;
@@ -56,18 +87,38 @@ int main(int argc, char *argv[])
     int algoNum = atoi(argv[2]);
     int algoArgs;
     int pid;
+    struct msgbuff2 mess;
+    mess.mtype =1;
+    mess.data[0] = algoNum;
     if(algoNum == 5)
+    {   
         algoArgs = atoi(argv[3]);
+        mess.data[1] = algoArgs;
+    }
+    mess.data[2] = count-1;       
     // 3. Initiate and create the scheduler and clock processes.
 
+    //Sending Data
+    
+    
+    send_val = msgsnd(upq_id, &mess, sizeof(mess.data), !IPC_NOWAIT);
     // initialize the clock
+    int sid=0;
+   
     pid = fork();
+    cid = pid;
     if(pid == 0)
+    {
         execlp("/home/ammar/Desktop/Operating-system-simulator/c.out","c.out",(char *)NULL);
+    }  
     // initialize the scheduler
     pid = fork();
+    sid = pid;
     if(pid == 0)
+    {
         execlp("/home/ammar/Desktop/Operating-system-simulator/s.out","s.out",(char *)NULL);
+    }
+        
     // 4. Use this function after creating the clock process to initialize clock.
     initClk();
     // To get time use this function. 
@@ -75,16 +126,23 @@ int main(int argc, char *argv[])
     printf("Current Time is %d\n", x);
     // TODO Generation Main Loop
     int i=0;
-    while (true) //condition that processes are all done
+
+    
+    while (i<count-1) //condition that processes are all done
     {
-        
         x = getClk();
-        //printf("%d \n", x-prcsArray[i].arrivaltime);
+        
         if (x == (prcsArray[i].arrivaltime))
         {
-            printf("Process %d Started Now", prcsArray[i++].id);
+            printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+            message.processData.id = prcsArray[i].id;
+            message.processData.arrivaltime = prcsArray[i].arrivaltime;
+            message.processData.runningtime = prcsArray[i].runningtime;
+            message.processData.priority = prcsArray[i].priority;
+            send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
+            kill(sid, SIGUSR1);
+            i++;
         }
-        //ssleep(0.5);
     }
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
