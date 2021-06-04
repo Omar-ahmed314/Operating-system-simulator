@@ -1,29 +1,8 @@
 #include "headers.h"
+#include"schedulerData.h"
 
-enum ProcessState {
-    ready,
-    running,
-    blocked
-};
 
-struct processData
-{
-    int arrivaltime;
-    int priority;
-    int runningtime;
-    int id;
-};
-struct PCBNode
-{
-    int state;
-    bool hasStarted;
-    struct processData* pData;
-    int waitingTime;
-    int remainingTime;
-    int startTime; 
-    struct PCBNode* next;
-};
-struct PCBNode* PCB;
+struct PCBNode* PCB = 0;
 struct PCBNode* runningPCB;
 struct msgbuff
 {
@@ -50,13 +29,14 @@ void recieveProcess(int signum)
     newProcess->pData = process;
     newProcess->state = ready;
     newProcess->hasStarted = false;
-    //TODO newProcess is inserted in PCB
+    newProcess->next = 0;
+    insertNode(PCB,newProcess);
     printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
-    
+    destroyPCB(PCB);
     destroyClk(false);
     kill(getpid(), SIGKILL);
 }
