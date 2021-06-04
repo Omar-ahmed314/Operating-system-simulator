@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     mess.data[0] = algoNum;
     if(algoNum == 5)
     {   
-        algoArgs = atoi(argv[3]);
+        algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
     mess.data[2] = count-1;       
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
         
         if (x == (prcsArray[i].arrivaltime))
         {
-            printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+            //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
             message.processData.id = prcsArray[i].id;
             message.processData.arrivaltime = prcsArray[i].arrivaltime;
             message.processData.runningtime = prcsArray[i].runningtime;
