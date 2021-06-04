@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     }
     
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
-    int algoNum = atoi(argv[2]);
+    int algoNum = atoi(argv[3]);
     int algoArgs;
     int pid;
     struct msgbuff2 mess;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     mess.data[0] = algoNum;
     if(algoNum == 5)
     {   
-        algoArgs = atoi(argv[3]);
+        algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
     mess.data[2] = count-1;       
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
         
         if (x == (prcsArray[i].arrivaltime))
         {
-            printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+            //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
             message.processData.id = prcsArray[i].id;
             message.processData.arrivaltime = prcsArray[i].arrivaltime;
             message.processData.runningtime = prcsArray[i].runningtime;

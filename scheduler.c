@@ -1,7 +1,19 @@
 #include "headers.h"
 #include"schedulerData.h"
 #include"SRTN.h"
-
+void runProcess()
+{
+    int pid;
+    pid = fork();
+    if(pid == 0)
+    {
+        execl("process.out","process.out", "5", (char *)NULL);
+    }
+    sleep(2);
+    kill(pid, SIGSTOP);
+    sleep(5);
+    kill(pid, SIGCONT);
+}
 int algNum;
 int noProcesses;
 int processesDone; //to keep track if the program is finished
@@ -74,6 +86,7 @@ int main(int argc, char *argv[])
     printf("%d %d %d \n", mess.data[0], mess.data[1], mess.data[2]);
     algNum = mess.data[0];
     noProcesses = mess.data[2];
+    runProcess();
     if (algNum  == FCFS)
     {
         //Call Alg 1 with printing inside
@@ -89,7 +102,7 @@ int main(int argc, char *argv[])
     else if (algNum  == SRTN)
     {
         //Call Alg 4 with printing inside
-        SRTN(PCB);
+        SRTNAlgorithm(PCB);
     }
     else if (algNum  == RR)
     {
@@ -136,3 +149,4 @@ void HPFAlgorithm() //////////NOT FINAL
     
 
 }
+
