@@ -38,7 +38,7 @@ void recieveProcess(int signum)
     newProcess->hasStarted = false;
     newProcess->next = 0;
     insertNode(PCB,newProcess);
-    recievedProcess = false;
+    recievedProcess = true;
     printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
