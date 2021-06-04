@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include<stdio.h>
+#include"headers.h"
 struct processData
 {
     int arrivaltime;
@@ -44,8 +46,6 @@ void deleteByID(struct PCBNode **head, int ID)
         temp = 0;
         return;
     }
-
-    struct PCBNode *temp = *head;
     struct PCBNode *next = temp->next;
     // asking if next is id
     while (temp && next && next->pData->id != ID)
@@ -81,5 +81,20 @@ void destroyPCB(struct PCBNode *head)
         free(head);
         head = temp;
     }
+}
+void printPCB_ID(struct PCBNode*head){
+    while(head && head->pData){
+        printf("%d ",head->pData->id);
+        head = head->next;
+    }
+    printf("\n");
+}
+int countPCB(struct PCBNode*head){
+    int count = 0;
+    while(head){
+        count++;
+        head= head->next;
+    }
+    return count;
 }
 // struct PCBNode* createPCBNode(struct processData*process,int state,bool hasStarted,struct PCBNode*next,)

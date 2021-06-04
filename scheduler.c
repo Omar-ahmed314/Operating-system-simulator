@@ -17,6 +17,7 @@ struct msgbuff2
 int downq_id, upq_id, send_val, rec_val;
 void recieveProcess(int signum)
 {
+    //? where is starttime, remaining time?
     struct msgbuff message;
     //struct processData process;
     rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
