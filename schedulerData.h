@@ -14,6 +14,14 @@ enum ProcessState {
     blocked
 };
 
+enum Algorithm {
+    FCFS,
+    SJF,
+    HPF,
+    SRTN,
+    RR
+};
+
 struct PCBNode
 {
     int state;
