@@ -2,6 +2,13 @@
 #include"schedulerData.h"
 #include"SRTN.h"
 
+int algNum;
+int noProcesses;
+int processesDone; //to keep track if the program is finished
+
+bool recievedProcess; //A flag that determines if a new process has just been recieved
+
+
 struct PCBNode* PCB = 0;
 struct PCBNode* runningPCB;
 struct msgbuff
@@ -32,6 +39,7 @@ void recieveProcess(int signum)
     newProcess->hasStarted = false;
     newProcess->next = 0;
     insertNode(PCB,newProcess);
+    recievedProcess = true;
     printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
@@ -47,7 +55,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, clearResources);
     signal(SIGUSR1, recieveProcess);
     key_t key_id;
-    
+    recievedProcess = false;
     key_id = 99;
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
@@ -64,24 +72,26 @@ int main(int argc, char *argv[])
     struct msgbuff2 mess;
     rec_val = msgrcv(downq_id, &mess, sizeof(mess.data), 0, !IPC_NOWAIT);
     printf("%d %d %d \n", mess.data[0], mess.data[1], mess.data[2]);
-    if (mess.data[0] == 1)
+    algNum = mess.data[0];
+    noProcesses = mess.data[2];
+    if (algNum  == FCFS)
     {
         //Call Alg 1 with printing inside
     }
-    else if (mess.data[0] == 2)
+    else if (algNum  == SJF)
     {
         //Call Alg 2 with printing inside
     }
-    else if (mess.data[0] == 3)
+    else if (algNum  == HPF)
     {
         //Call Alg 3 with printing inside
     }
-    else if (mess.data[0] == 4)
+    else if (algNum  == SRTN)
     {
         //Call Alg 4 with printing inside
         SRTN(PCB);
     }
-    else if (mess.data[0] == 5)
+    else if (algNum  == RR)
     {
         //Call Alg 5 with printing inside
     }
@@ -92,4 +102,37 @@ int main(int argc, char *argv[])
     //TODO: upon termination release the clock resources.
 
     //destroyClk(true);
+}
+void HPFAlgorithm() //////////NOT FINAL
+{
+    while(processesDone < noProcesses || runningPCB != NULL)
+    {
+
+        if (recievedProcess)
+        {
+            struct PCBNode* temp = PCB;
+            struct PCBNode* chosenProcess;
+            chosenProcess = temp;
+            while(temp != NULL)
+            {
+                if (temp->state == ready && temp->pData->priority < chosenProcess->pData->priority)
+                {
+                    chosenProcess =temp;
+                }
+                temp=temp->next;
+            }
+            if (runningPCB == NULL)
+            {
+                 //run
+            }
+            else if(chosenProcess->pData->priority < runningPCB->pData->priority)
+            {
+                //stop running
+                //run 
+            }
+            recievedProcess = false;
+        }
+    }
+    
+
 }
