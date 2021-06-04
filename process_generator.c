@@ -7,6 +7,8 @@ struct processData
     int id;
 };
 
+
+
 int cid, downq_id, upq_id, send_val, rec_val;
 
 struct msgbuff
