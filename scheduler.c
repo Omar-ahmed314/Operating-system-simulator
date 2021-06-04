@@ -40,6 +40,7 @@ void recieveProcess(int signum)
     newProcess->next = 0;
     insertNode(PCB,newProcess);
     recievedProcess = true;
+    printPCB_ID(PCB);
     printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
@@ -57,6 +58,7 @@ int main(int argc, char *argv[])
     key_t key_id;
     recievedProcess = false;
     key_id = 99;
+    
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
     if (downq_id == -1)
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
     else if (algNum  == SRTN)
     {
         //Call Alg 4 with printing inside
-        SRTN(PCB);
+        SRTN_func(PCB);
     }
     else if (algNum  == RR)
     {

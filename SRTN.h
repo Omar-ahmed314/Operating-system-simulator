@@ -2,8 +2,9 @@
 #define SRTN_H
 #include"headers.h"
 #include"schedulerData.h"
-void SRTN(struct PCBNode* head){
-    printf("function has started");
+#include<stdio.h>
+void SRTN_func(struct PCBNode* head){
+    printf("SRTN printing:");
     printPCB_ID(head);
 }
 

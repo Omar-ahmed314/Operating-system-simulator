@@ -17,7 +17,7 @@ enum ProcessState {
 };
 
 enum Algorithm {
-    FCFS,
+    FCFS = 1,
     SJF,
     HPF,
     SRTN,

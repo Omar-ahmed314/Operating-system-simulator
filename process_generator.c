@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
     }
     
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
-    int algoNum = atoi(argv[2]);
+    int algoNum = atoi(argv[3]);
     int algoArgs;
     int pid;
     struct msgbuff2 mess;
@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
     // TODO Generation Main Loop
     int i=0;
 
+    printf("PG: Algorithm number is %d\n",algoNum);
     
     while (i<count-1) //condition that processes are all done
     {
