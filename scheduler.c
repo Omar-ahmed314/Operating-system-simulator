@@ -1,6 +1,6 @@
 #include "headers.h"
 #include"schedulerData.h"
-
+#include"SRTN.h"
 
 struct PCBNode* PCB = 0;
 struct PCBNode* runningPCB;
@@ -79,6 +79,7 @@ int main(int argc, char *argv[])
     else if (mess.data[0] == 4)
     {
         //Call Alg 4 with printing inside
+        SRTN(PCB);
     }
     else if (mess.data[0] == 5)
     {

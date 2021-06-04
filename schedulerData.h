@@ -1,3 +1,5 @@
+#ifndef SCHDATA_H
+#define SCHDATA_H
 #include <stdlib.h>
 #include<stdio.h>
 #include"headers.h"
@@ -98,3 +100,5 @@ int countPCB(struct PCBNode*head){
     return count;
 }
 // struct PCBNode* createPCBNode(struct processData*process,int state,bool hasStarted,struct PCBNode*next,)
+
+#endif

@@ -111,14 +111,14 @@ int main(int argc, char *argv[])
     cid = pid;
     if(pid == 0)
     {
-        execlp("/home/ammar/Desktop/Operating-system-simulator/c.out","c.out",(char *)NULL);
+        execl("clk.out","clk.out",(char *)NULL);
     }  
     // initialize the scheduler
     pid = fork();
     sid = pid;
     if(pid == 0)
     {
-        execlp("/home/ammar/Desktop/Operating-system-simulator/s.out","s.out",(char *)NULL);
+        execl("scheduler.out","scheduler.out",(char *)NULL);
     }
         
     // 4. Use this function after creating the clock process to initialize clock.
