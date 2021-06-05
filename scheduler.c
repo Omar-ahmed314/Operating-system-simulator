@@ -14,8 +14,8 @@ void runProcess()
     sleep(5);
     kill(pid, SIGCONT);
 }
-int algNum;
-int noProcesses;
+int algNum,quantum;
+int noProcesses,currentProcessesNumber;
 int processesDone; //to keep track if the program is finished
 
 bool recievedProcess; //A flag that determines if a new process has just been recieved
@@ -53,6 +53,7 @@ void recieveProcess(int signum)
         newProcess->next = 0;
         insertNode(&PCB, newProcess);
         recievedProcess = true;
+        currentProcessesNumber++;
         rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
         // printPCB(PCB);
         // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
@@ -97,6 +98,7 @@ int main(int argc, char *argv[])
     rec_val = msgrcv(downq_id, &mess, sizeof(mess.data), 0, !IPC_NOWAIT);
     printf("%d %d %d \n", mess.data[0], mess.data[1], mess.data[2]);
     algNum = mess.data[0];
+    quantum = mess.data[1];
     noProcesses = mess.data[2];
     // runProcess();
     int clk = getClk();
@@ -137,6 +139,7 @@ int main(int argc, char *argv[])
             {
                 printPCB(PCB);
                 currentProcess = findTarget(SRTN, PCB);
+                printf("SRTN\n");
                 printf("current process id in SRTN is %d\n", currentProcess->pData->id);
             }
             else if (algNum == RR)
@@ -185,6 +188,42 @@ void HPFAlgorithm() //////////NOT FINAL
                 //run
             }
             recievedProcess = false;
+        }
+    }
+}
+
+/* ========= Round-Robin Algorithm ========= */
+
+void RRAlgorithm(){
+    struct PCBNode *Head = PCB;
+    struct PCBNode *RunningP = Head;
+    processesDone = 0;
+    currentProcessesNumber = 0;
+    int CuTime,PrTime;
+    while( processesDone < noProcesses ){
+        RunningP = Head;
+        for(int i=0;i<currentProcessesNumber;i++){  // Loop on the current processes
+            if(RunningP->state == ready && RunningP->hasStarted == false){    // First run of the process
+                RunningP->hasStarted = true;
+                // run process ?
+            }
+            else if(RunningP->state == ready && RunningP->hasStarted == true){  // Continue stopped process
+                // Continue process
+            }
+
+            PrTime = getClk();
+            CuTime = getClk();
+            while( (CuTime - PrTime) < quantum ){
+                CuTime = getClk();
+                if(RunningP->remainingTime - (CuTime - PrTime) <= 0){
+                    RunningP->remainingTime = 0;
+                    // Delete Process
+                    currentProcessesNumber--;
+                }
+            }
+            RunningP->remainingTime -= quantum;
+            // Stop the Process
+            RunningP = RunningP->next;                
         }
     }
 }

@@ -57,10 +57,11 @@ void insertNodeReversed(struct PCBNode **head, struct PCBNode *Node) // like a s
         *head = Node;
         return;
     }
-
     struct PCBNode *temp = (*head);
-    (*head) = Node;
-    Node->next = temp;
+    while (temp->next != NULL){
+        temp = temp->next;
+    }
+    temp->next = Node;
 }
 //send struct PCBNode** head, ID
 void deleteByID(struct PCBNode **head, int ID)
