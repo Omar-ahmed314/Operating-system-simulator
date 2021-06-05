@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
     struct msgbuff2 mess;
     mess.mtype = 1;
     mess.data[0] = algoNum;
+    mess.data[1] = 0;
     if (algoNum == 5)
     {
         algoArgs = atoi(argv[5]);

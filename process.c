@@ -27,6 +27,7 @@ int main(int agrc, char *argv[])
         printf("error in receiving value\n");
     }
     remainingtime = mess.remaining;
+    printf("Hi new process, received remaining time = %d\n", remainingtime);
     while (remainingtime > 0)
     {
         rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
@@ -35,6 +36,7 @@ int main(int agrc, char *argv[])
             printf("error in receiving value\n");
         }
         remainingtime = mess.remaining;
+        printf("process received remaining time = %d\n", remainingtime);
     }
     destroyClk(false);
 

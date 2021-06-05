@@ -129,29 +129,47 @@ int main(int argc, char *argv[])
     printf("algorithm number = %d\n", algNum);
     int processesCounter = noProcesses;
     int previousId = 0;
-
+    int roundRobinCounter = quantum;
     while (1)
     {
-
         // every new second:
         // currentProcess
-
-        // toggle: previous!=current
-        // stop-> algorithm (old)
-        // start -> algorithm (new)
-        // update remaining time -> common
-        //
 
         // entered a new second
         if (prevClk != getClk())
         {
-            currentProcess = findTarget(algNum, PCB);
-            if (currentProcess) //
+            if (algNum != RR)
+            {
+                currentProcess = findTarget(algNum, PCB);
+            }
+            else // round robin
+            {
+                if (!currentProcess) // at the beginning of execution
+                {
+                    currentProcess = PCB;
+                }
+                roundRobinCounter--;
+                if (roundRobinCounter <= 0 || currentProcess->remainingTime <= 0)
+                {
+                    roundRobinCounter = quantum;
+                    struct PCBNode *temp = currentProcess;
+                    currentProcess = currentProcess->next;
+                    if (temp->remainingTime <= 0)
+                    {
+                        deleteByID(&PCB, temp->pData->id);
+                    }
+                    if (!currentProcess)
+                    {
+                        currentProcess = PCB;
+                    }
+                }
+            }
+            if (currentProcess)
             {
                 //changed state
                 if (previousId != currentProcess->pData->id)
                 {
-                    struct PCBNode *previousProc = searchID(PCB, previousId);// starting clk = 0 or previous deleted 
+                    struct PCBNode *previousProc = searchID(PCB, previousId); // starting clk = 0 or previous deleted
                     if (previousProc)
                     {
                         stopProcess(previousProc);
@@ -170,14 +188,15 @@ int main(int argc, char *argv[])
                 if (currentProcess->remainingTime <= 0)
                 {
                     printf("deleted process of ID %d\n", currentProcess->pData->id);
-                    deleteByID(&PCB, currentProcess->pData->id);
-                    currentProcess = NULL;
+                    if (algNum != RR) // @ because it will be needed to get next one
+                    {
+                        deleteByID(&PCB, currentProcess->pData->id);
+                    }
                 }
-
                 printPCB(PCB);
             }
-            
-            else if (algNum == RR)
+
+            if (algNum == RR)
             {
                 //Call Alg 5 with printing inside
             }
