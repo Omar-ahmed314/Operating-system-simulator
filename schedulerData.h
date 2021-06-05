@@ -42,9 +42,15 @@ void insertNode(struct PCBNode **head, struct PCBNode *Node)
         return;
     }
 
-    struct PCBNode *temp = (*head);
-    (*head)= Node;
-    Node->next = temp;
+    else{
+        struct PCBNode *temp = (*head);
+        while (temp->next != NULL)
+            temp = temp->next;
+        temp->next = Node;
+    }
+    //struct PCBNode *temp = (*head);
+    //(*head)= Node;
+    //Node->next = temp;
     // struct PCBNode *temp = (*head)->next;
     // (*head)->next = Node;
     // Node->next = temp;
