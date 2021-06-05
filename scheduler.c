@@ -54,7 +54,7 @@ void recieveProcess(int signum)
         insertNode(&PCB, newProcess);
         recievedProcess = true;
         rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
-        // printPCB_ID(PCB);
+        // printPCB(PCB);
         // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
     }
     if (rec_val == -1)
@@ -101,43 +101,43 @@ int main(int argc, char *argv[])
     // runProcess();
     int clk = getClk();
     int prevClk = clk;
-    struct PCBNode* currentProcess;
+    struct PCBNode *currentProcess = NULL;
     while (1)
     {
         // entered a new second
         if (prevClk != getClk())
         {
+            if (currentProcess)
+            {
+                currentProcess->remainingTime--;
+                if (currentProcess->remainingTime <= 0)
+                {
+                    deleteByID(&PCB, currentProcess->pData->id);
+                }
+            }
             if (algNum == FCFS)
             {
                 //Call Alg 1 with printing inside
                 // you may need to use:
-                currentProcess = findTarget(FCFS,PCB);
-                // and when remaining time is 0:
-                deleteByID(&PCB,currentProcess->pData->id);
+                currentProcess = findTarget(FCFS, PCB);
             }
             else if (algNum == SJF)
             {
                 //Call Alg 2 with printing inside
                 // you may need to use:
-                currentProcess = findTarget(SJF,PCB);
-                // and when remaining time is 0:
-                deleteByID(&PCB,currentProcess->pData->id);
+                currentProcess = findTarget(SJF, PCB);
             }
             else if (algNum == HPF)
             {
                 //Call Alg 3 with printing inside
                 // you may need to use:
-                currentProcess = findTarget(HPF,PCB);
-                // and when remaining time is 0:
-                deleteByID(&PCB,currentProcess->pData->id);
+                currentProcess = findTarget(HPF, PCB);
             }
             else if (algNum == SRTN)
             {
-                // you may need to use:
-                currentProcess = findTarget(SRTN,PCB);
-                // and when remaining time is 0:
-                printf("current process id in SRTN is %d\n",currentProcess->pData->id);
-                // deleteByID(&PCB,currentProcess->pData->id);
+                printPCB(PCB);
+                currentProcess = findTarget(SRTN, PCB);
+                printf("current process id in SRTN is %d\n", currentProcess->pData->id);
             }
             else if (algNum == RR)
             {

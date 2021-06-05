@@ -113,7 +113,7 @@ void destroyPCB(struct PCBNode *head)
         head = temp;
     }
 }
-void printPCB_ID(struct PCBNode *head)
+void printPCB(struct PCBNode *head)
 {
     while (head && head->pData)
     {
