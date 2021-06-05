@@ -4,8 +4,8 @@
 #include"schedulerData.h"
 
 void SRTNAlgorithm(struct PCBNode* head){
-    printf("function has started");
     printPCB_ID(head);
+    printf("Count of Processes in the PCB is %d\n",countPCB(head));
 }
 
 #endif

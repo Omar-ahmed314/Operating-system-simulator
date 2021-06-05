@@ -35,10 +35,14 @@ struct PCBNode
     struct PCBNode *next;
 };
 
-void insertNode(struct PCBNode *head, struct PCBNode *Node)
+void insertNode(struct PCBNode **head, struct PCBNode *Node)
 {
-    struct PCBNode *temp = head->next;
-    head->next = Node;
+    if(*head==NULL){
+        *head = Node;
+        return;
+    }
+    struct PCBNode *temp = (*head)->next;
+    (*head)->next = Node;
     Node->next = temp;
 }
 //send struct PCBNode** head, ID

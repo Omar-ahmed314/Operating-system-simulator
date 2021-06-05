@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
     // count the process of the file
     int count = 0;
-    char first_line[50];
+    char first_line[100];
     fgets(first_line, 100, prcsFile);
     while(!feof(prcsFile))
     {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
     
     prcsFile = fopen(argv[1], "r");
 
-    char second_line[50];
+    char second_line[100];
     fgets(second_line, 100, prcsFile);
     for(int i = 0; i < count; i++)
     {
@@ -120,7 +120,6 @@ int main(int argc, char *argv[])
     {
         execl("scheduler.out","scheduler.out",(char *)NULL);
     }
-        
     // 4. Use this function after creating the clock process to initialize clock.
     initClk();
     // To get time use this function. 
@@ -128,8 +127,6 @@ int main(int argc, char *argv[])
     printf("Current Time is %d\n", x);
     // TODO Generation Main Loop
     int i=0;
-
-    printf("PG: Algorithm number is %d\n",algoNum);
     
     while (i<count-1) //condition that processes are all done
     {
@@ -137,13 +134,13 @@ int main(int argc, char *argv[])
         
         if (x == (prcsArray[i].arrivaltime))
         {
-            //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+            // printf("Process %d Started at time %d \n", prcsArray[i].id, x);
             message.processData.id = prcsArray[i].id;
             message.processData.arrivaltime = prcsArray[i].arrivaltime;
             message.processData.runningtime = prcsArray[i].runningtime;
             message.processData.priority = prcsArray[i].priority;
-            send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
             kill(sid, SIGUSR1);
+            send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
             i++;
         }
     }
