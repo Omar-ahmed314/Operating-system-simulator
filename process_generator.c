@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
                 message.processData.runningtime = prcsArray[y].runningtime;
                 message.processData.priority = prcsArray[y].priority;
                 // ? why should I wait?
-                send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
+                send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
                 kill(sid, SIGUSR1);
                 i++;
             }

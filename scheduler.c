@@ -53,7 +53,7 @@ void recieveProcess(int signum)
         newProcess->next = 0;
         insertNode(&PCB, newProcess);
         recievedProcess = true;
-        rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
+        rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
         // printPCB_ID(PCB);
         // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
     }
