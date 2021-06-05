@@ -1,8 +1,8 @@
 #ifndef SCHDATA_H
 #define SCHDATA_H
 #include <stdlib.h>
-#include<stdio.h>
-#include"headers.h"
+#include <stdio.h>
+#include "headers.h"
 struct processData
 {
     int arrivaltime;
@@ -10,13 +10,15 @@ struct processData
     int runningtime;
     int id;
 };
-enum ProcessState {
+enum ProcessState
+{
     ready,
     running,
     blocked
 };
 
-enum Algorithm {
+enum Algorithm
+{
     FCFS = 1,
     SJF,
     HPF,
@@ -34,20 +36,31 @@ struct PCBNode
     int startTime;
     struct PCBNode *next;
 };
-
-void insertNode(struct PCBNode **head, struct PCBNode *Node)
+void insertNode(struct PCBNode **head, struct PCBNode *Node) // like a queue
 {
-    if(*head==NULL){
+    if (*head == NULL)
+    {
+        *head = Node;
+        return;
+    }
+    struct PCBNode *temp = *head;
+    while (temp->next)
+    {
+        temp = temp->next;
+    }
+    temp->next = Node;
+}
+void insertNodeReversed(struct PCBNode **head, struct PCBNode *Node) // like a stack , we may not use it
+{
+    if (*head == NULL)
+    {
         *head = Node;
         return;
     }
 
     struct PCBNode *temp = (*head);
-    (*head)= Node;
+    (*head) = Node;
     Node->next = temp;
-    // struct PCBNode *temp = (*head)->next;
-    // (*head)->next = Node;
-    // Node->next = temp;
 }
 //send struct PCBNode** head, ID
 void deleteByID(struct PCBNode **head, int ID)
@@ -100,60 +113,75 @@ void destroyPCB(struct PCBNode *head)
         head = temp;
     }
 }
-void printPCB_ID(struct PCBNode*head){
-    while(head && head->pData){
-        printf("%d ",head->pData->id);
+void printPCB_ID(struct PCBNode *head)
+{
+    while (head && head->pData)
+    {
+        printf("%d ", head->pData->id);
         head = head->next;
     }
     printf("\n");
 }
-int countPCB(struct PCBNode*head){
+int countPCB(struct PCBNode *head)
+{
     int count = 0;
-    while(head){
+    while (head)
+    {
         count++;
-        head= head->next;
+        head = head->next;
     }
     return count;
 }
-// struct PCBNode* createPCBNode(struct processData*process,int state,bool hasStarted,struct PCBNode*next,)
-struct PCBNode* findHPF(struct PCBNode*head){
-    struct PCBNode* highestPrioriy = head;
-    while(head){
-        if(head->pData->priority>highestPrioriy->pData->priority){
-            highestPrioriy = head;
-        }
-        head = head->next;
-    }
-    return highestPrioriy;
+
+static bool FCFScondition(struct PCBNode *arrow, struct PCBNode *firstComing)
+{
+    return arrow->pData->arrivaltime < firstComing->pData->arrivaltime; // you found someone (arrow) arrived before you
 }
-struct PCBNode* findSRTN(struct PCBNode*head){
-    struct PCBNode* shortestRemaining = head;
-    while(head){
-        if(head->remainingTime < shortestRemaining->remainingTime){
-            shortestRemaining = head;
-        }
-        head = head->next;
-    }
-    return shortestRemaining;
+static bool SJFcondition(struct PCBNode *arrow, struct PCBNode *shortestJob)
+{
+    return arrow->pData->runningtime < shortestJob->pData->runningtime; //you found someone (arrow) funs less than you
 }
-struct PCBNode* findFCFS(struct PCBNode*head){
-    struct PCBNode* shortestRemaining = head;
-    while(head){
-        if(head->pData->arrivaltime < shortestRemaining->pData->arrivaltime){
-            shortestRemaining = head;
-        }
-        head = head->next;
-    }
-    return shortestRemaining;
+static bool HPFcondition(struct PCBNode *arrow, struct PCBNode *highestPrioriy)
+{
+    return arrow->pData->priority < highestPrioriy->pData->priority; // you found someone (arrow) of priority less than you
 }
-struct PCBNode* findSJF(struct PCBNode*head){
-    struct PCBNode* shortestRemaining = head;
-    while(head){
-        if(head->pData->runningtime < shortestRemaining->pData->runningtime){
-            shortestRemaining = head;
+static bool SRTNcondition(struct PCBNode *arrow, struct PCBNode *shortestRemaining)
+{
+    return arrow->remainingTime < shortestRemaining->remainingTime; // you found someone (arrow) of remaining time less than you
+}
+
+static bool condition(int algoNum, struct PCBNode *arrow, struct PCBNode *target)
+{
+    switch (algoNum)
+    {
+    case FCFS:
+        return FCFScondition(arrow, target);
+        break;
+    case SJF:
+        return SJFcondition(arrow, target);
+        break;
+    case HPF:
+        return HPFcondition(arrow, target);
+        break;
+    case SRTN:
+        return SRTNcondition(arrow, target);
+        break;
+    default:
+        break;
+    }
+    printf("Hi, I don't support this algorithm. bye\n");
+}
+struct PCBNode *findTarget(int algoNum, struct PCBNode *head)
+{
+    struct PCBNode *target = head;
+    while (head)
+    {
+        if (condition(algoNum, head, target))
+        {
+            target = head;
         }
         head = head->next;
     }
-    return shortestRemaining;
+    return target;
 }
 #endif

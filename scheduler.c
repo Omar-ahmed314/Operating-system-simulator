@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
     // runProcess();
     int clk = getClk();
     int prevClk = clk;
+    struct PCBNode* currentProcess;
     while (1)
     {
         // entered a new second
@@ -109,18 +110,34 @@ int main(int argc, char *argv[])
             if (algNum == FCFS)
             {
                 //Call Alg 1 with printing inside
+                // you may need to use:
+                currentProcess = findTarget(FCFS,PCB);
+                // and when remaining time is 0:
+                deleteByID(&PCB,currentProcess->pData->id);
             }
             else if (algNum == SJF)
             {
                 //Call Alg 2 with printing inside
+                // you may need to use:
+                currentProcess = findTarget(SJF,PCB);
+                // and when remaining time is 0:
+                deleteByID(&PCB,currentProcess->pData->id);
             }
             else if (algNum == HPF)
             {
                 //Call Alg 3 with printing inside
+                // you may need to use:
+                currentProcess = findTarget(HPF,PCB);
+                // and when remaining time is 0:
+                deleteByID(&PCB,currentProcess->pData->id);
             }
             else if (algNum == SRTN)
             {
-                SRTNAlgorithm(PCB);
+                // you may need to use:
+                currentProcess = findTarget(SRTN,PCB);
+                // and when remaining time is 0:
+                printf("current process id in SRTN is %d\n",currentProcess->pData->id);
+                // deleteByID(&PCB,currentProcess->pData->id);
             }
             else if (algNum == RR)
             {

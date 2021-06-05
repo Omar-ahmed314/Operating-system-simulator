@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
     totalRunningTime = max(totalRunningTime, prcsArray[count - 2].arrivaltime + prcsArray[count - 2].runningtime);
     int i = 0;
     // ! to solve error: Current Time = 59: toogle the following two lines
-    // while (i<count-1) //condition that processes are all done
-    while (x <= totalRunningTime)
+    while (i<count-1) //condition that processes are all done
+    // while (x <= totalRunningTime)
     {
         x = getClk();
         int y = i;
