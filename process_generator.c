@@ -137,9 +137,9 @@ int main(int argc, char *argv[])
     {
         x = getClk();
         int y = i;
-        for (; y < count - 1; y++) // I think send makes some delay
+        // for (; y < count - 1; y++) // I think send makes some delay
         {
-            if (x == (prcsArray[y].arrivaltime))
+            if (x-1 == (prcsArray[y].arrivaltime))
             {
                 //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
                 message.processData.id = prcsArray[y].id;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
                 message.processData.runningtime = prcsArray[y].runningtime;
                 message.processData.priority = prcsArray[y].priority;
                 // ? why should I wait?
-                send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
+                send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
                 kill(sid, SIGUSR1);
                 i++;
             }
