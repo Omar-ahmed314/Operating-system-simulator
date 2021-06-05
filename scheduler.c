@@ -1,6 +1,13 @@
 #include "headers.h"
 #include "schedulerData.h"
 #include "SRTN.h"
+
+void stopProcess(struct PCBNode *);
+void startProcess(struct PCBNode *);
+void HPFAlgorithm();
+void RRAlgorithm();
+void sendRem(int remainingTime);
+void destroyRemMsg();
 void runProcess()
 {
     int pid;
@@ -14,8 +21,8 @@ void runProcess()
     sleep(5);
     kill(pid, SIGCONT);
 }
-int algNum,quantum;
-int noProcesses,currentProcessesNumber;
+int algNum, quantum;
+int noProcesses, currentProcessesNumber;
 int processesDone; //to keep track if the program is finished
 
 bool recievedProcess; //A flag that determines if a new process has just been recieved
@@ -32,6 +39,13 @@ struct msgbuff2
     int mtype;
     int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
 };
+int downq_id_rem, rec_val_rem;
+key_t key_id_rem;
+struct msgbuffRem
+{
+    int mtype;
+    int remaining;
+} mess_rem;
 int downq_id, upq_id, send_val, rec_val;
 void recieveProcess(int signum)
 {
@@ -51,6 +65,7 @@ void recieveProcess(int signum)
         newProcess->state = ready;
         newProcess->hasStarted = false;
         newProcess->next = 0;
+        newProcess->pid = 0;
         insertNode(&PCB, newProcess);
         recievedProcess = true;
         currentProcessesNumber++;
@@ -68,9 +83,9 @@ void clearResources(int signum)
     //TODO Clears all resources in case of interruption
     destroyPCB(PCB);
     destroyClk(false);
-    kill(getpid(), SIGKILL);
+    destroyRemMsg();
+    kill(getppid(), SIGINT);
 }
-
 int main(int argc, char *argv[])
 {
     initClk();
@@ -79,11 +94,13 @@ int main(int argc, char *argv[])
     key_t key_id;
     recievedProcess = false;
     key_id = 99;
+    key_id_rem = 167;
     // ? why we need two message queues?
     // ? and why not keyfile?
     // ? why with the same ID?
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
+    downq_id_rem = msgget(key_id, 0666 | IPC_CREAT);
     if (downq_id == -1)
     {
         perror("Error in create");
@@ -92,6 +109,11 @@ int main(int argc, char *argv[])
     if (upq_id == -1)
     {
         perror("Error in create");
+        exit(-1);
+    }
+    if (downq_id_rem == -1)
+    {
+        perror("Error in create\n");
         exit(-1);
     }
     struct msgbuff2 mess;
@@ -106,46 +128,55 @@ int main(int argc, char *argv[])
     struct PCBNode *currentProcess = NULL;
     printf("algorithm number = %d\n", algNum);
     int processesCounter = noProcesses;
-    while (processesCounter)
+    int previousId = 0;
+
+    while (1)
     {
+
+        // every new second:
+        // currentProcess
+
+        // toggle: previous!=current
+        // stop-> algorithm (old)
+        // start -> algorithm (new)
+        // update remaining time -> common
+        //
+
         // entered a new second
         if (prevClk != getClk())
         {
-            if (currentProcess)
+            currentProcess = findTarget(algNum, PCB);
+            if (currentProcess) //
             {
+                //changed state
+                if (previousId != currentProcess->pData->id)
+                {
+                    struct PCBNode *previousProc = searchID(PCB, previousId);// starting clk = 0 or previous deleted 
+                    if (previousProc)
+                    {
+                        stopProcess(previousProc);
+                        printf("Previous process ID = %d\n", previousProc->pData->id);
+                    }
+                    else
+                    {
+                        printf("Previous process is already deleted\n");
+                    }
+                    startProcess(currentProcess);
+                    // changes for next loop
+                    previousId = currentProcess->pData->id;
+                }
                 currentProcess->remainingTime--;
+                sendRem(currentProcess->remainingTime);
                 if (currentProcess->remainingTime <= 0)
                 {
+                    printf("deleted process of ID %d\n", currentProcess->pData->id);
                     deleteByID(&PCB, currentProcess->pData->id);
-                    processesCounter--;
+                    currentProcess = NULL;
                 }
-            }
-            if (algNum == FCFS)
-            {
-                //Call Alg 1 with printing inside
-                // you may need to use:
-                currentProcess = findTarget(FCFS, PCB);
-            }
-            else if (algNum == SJF)
-            {
-                //Call Alg 2 with printing inside
-                // you may need to use:
-                currentProcess = findTarget(SJF, PCB);
-            }
-            else if (algNum == HPF)
-            {
-                //Call Alg 3 with printing inside
-                // you may need to use:
-                currentProcess = findTarget(HPF, PCB);
-            }
-            else if (algNum == SRTN)
-            {
+
                 printPCB(PCB);
-                currentProcess = findTarget(SRTN, PCB);
-                printf("SRTN\n");
-                if(currentProcess)
-                    printf("current process id in SRTN is %d\n", currentProcess->pData->id);
             }
+            
             else if (algNum == RR)
             {
                 //Call Alg 5 with printing inside
@@ -196,28 +227,35 @@ void HPFAlgorithm() //////////NOT FINAL
 
 /* ========= Round-Robin Algorithm ========= */
 
-void RRAlgorithm(){
+void RRAlgorithm()
+{
     struct PCBNode *Head = PCB;
     struct PCBNode *RunningP = Head;
     processesDone = 0;
     currentProcessesNumber = 0;
-    int CuTime,PrTime;
-    while( processesDone < noProcesses ){
+    int CuTime, PrTime;
+    while (processesDone < noProcesses)
+    {
         RunningP = Head;
-        for(int i=0;i<currentProcessesNumber;i++){  // Loop on the current processes
-            if(RunningP->state == ready && RunningP->hasStarted == false){    // First run of the process
+        for (int i = 0; i < currentProcessesNumber; i++)
+        { // Loop on the current processes
+            if (RunningP->state == ready && RunningP->hasStarted == false)
+            { // First run of the process
                 RunningP->hasStarted = true;
                 // run process ?
             }
-            else if(RunningP->state == ready && RunningP->hasStarted == true){  // Continue stopped process
+            else if (RunningP->state == ready && RunningP->hasStarted == true)
+            { // Continue stopped process
                 // Continue process
             }
 
             PrTime = getClk();
             CuTime = getClk();
-            while( (CuTime - PrTime) < quantum ){
+            while ((CuTime - PrTime) < quantum)
+            {
                 CuTime = getClk();
-                if(RunningP->remainingTime - (CuTime - PrTime) <= 0){
+                if (RunningP->remainingTime - (CuTime - PrTime) <= 0)
+                {
                     RunningP->remainingTime = 0;
                     // Delete Process
                     currentProcessesNumber--;
@@ -225,7 +263,54 @@ void RRAlgorithm(){
             }
             RunningP->remainingTime -= quantum;
             // Stop the Process
-            RunningP = RunningP->next;                
+            RunningP = RunningP->next;
         }
     }
+}
+void stopProcess(struct PCBNode *process)
+{
+    if (process)
+    {
+        kill(process->pid, SIGSTOP);
+        int id = process->pData->id;
+        printf("stopping prcess of id = %d\n", id);
+    }
+}
+void startProcess(struct PCBNode *process)
+{
+    // fork or continue hasStarted
+    if (!process)
+    {
+        return;
+    }
+    // fork
+    if (!process->hasStarted)
+    {
+        int pid;
+        pid = fork();
+        if (pid == 0)
+        {
+            execl("process.out", "process.out", (char *)NULL);
+        }
+        process->remainingTime = process->pData->runningtime;
+        process->pid = pid;
+        sendRem(process->remainingTime);
+        process->hasStarted = true;
+    }
+    //conitnue
+    else
+    {
+        kill(process->pid, SIGCONT);
+    }
+    // common
+    printf("starting prcess of id = %d\n", process->pData->id);
+}
+void sendRem(int remainingTime)
+{
+    mess_rem.remaining = remainingTime;
+    int send_val_rem = msgsnd(upq_id, &mess_rem, sizeof(mess_rem.remaining), IPC_NOWAIT);
+}
+void destroyRemMsg()
+{
+    msgctl(downq_id_rem, IPC_RMID, 0);
 }

@@ -35,6 +35,7 @@ struct PCBNode
     int remainingTime;
     int startTime;
     struct PCBNode *next;
+    int pid;
 };
 void insertNode(struct PCBNode **head, struct PCBNode *Node) // like a queue
 {

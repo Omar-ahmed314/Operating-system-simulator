@@ -2,27 +2,40 @@
 
 /* Modify this file as needed*/
 int remainingtime;
-int prevtime;
-
-
+int downq_id, rec_val;
+struct msgbuffRem
+{
+    int mtype;
+    int remaining;
+};
 int main(int agrc, char *argv[])
 {
     initClk();
-    //TODO The process needs to get the remaining time from somewhere
-    //THIS WILL BE ALL CHANGED TO SHARED MEMORY PROBABLY
-    remainingtime = atoi(argv[1]);
-    printf("hello process just started with time %s\n", argv[1]);
-    prevtime=getClk();
+    key_t key_id;
+    key_id = 167;
+
+    downq_id = msgget(key_id, 0666 | IPC_CREAT);
+    if (downq_id == -1)
+    {
+        perror("Error in create");
+        exit(-1);
+    }
+    struct msgbuffRem mess;
+    rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
+    if (rec_val == -1)
+    {
+        printf("error in receiving value\n");
+    }
+    remainingtime = mess.remaining;
     while (remainingtime > 0)
     {
-        if (getClk() != prevtime)
+        rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
+        if (rec_val == -1)
         {
-            remainingtime--;
-            printf("remaning time: %d\n", remainingtime);
-            prevtime=getClk();
+            printf("error in receiving value\n");
         }
+        remainingtime = mess.remaining;
     }
-    printf("PROCESS IS DEAD \n");
     destroyClk(false);
 
     return 0;
