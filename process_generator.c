@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     mess.data[0] = algoNum;
     if (algoNum == 5)
     {
-        algoArgs = atoi(argv[4]);
+        algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
     mess.data[2] = count - 1;
