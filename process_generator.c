@@ -1,4 +1,5 @@
 #include "headers.h"
+int max(int a, int b) { return ((a) > (b) ? (a) : (b)); }
 struct processData
 {
     int arrivaltime;
@@ -6,8 +7,6 @@ struct processData
     int runningtime;
     int id;
 };
-
-
 
 int cid, downq_id, upq_id, send_val, rec_val;
 
@@ -38,7 +37,7 @@ int main(int argc, char *argv[])
 {
     signal(SIGINT, clearResources);
     key_t key_id;
-    
+
     key_id = 99;
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
@@ -48,7 +47,7 @@ int main(int argc, char *argv[])
         perror("Error in create");
         exit(-1);
     }
-     if (upq_id == -1)
+    if (upq_id == -1)
     {
         perror("Error in create");
         exit(-1);
@@ -56,92 +55,102 @@ int main(int argc, char *argv[])
 
     // TODO Initialization
     // 1. Read the input files.
-    struct processData* prcsArray;
+    struct processData *prcsArray;
 
     // open the process file
-    FILE * prcsFile;
+    FILE *prcsFile;
     prcsFile = fopen(argv[1], "r");
 
     // count the process of the file
     int count = 0;
     char first_line[100];
     fgets(first_line, 100, prcsFile);
-    while(!feof(prcsFile))
+    while (!feof(prcsFile))
     {
         fgets(first_line, 100, prcsFile);
         count++;
     }
 
     // initialize the process array with calloc
-    prcsArray = (struct processData*)calloc(count, sizeof(struct processData));
+    prcsArray = (struct processData *)calloc(count, sizeof(struct processData));
     fclose(prcsFile);
-    
+
     prcsFile = fopen(argv[1], "r");
 
     char second_line[100];
     fgets(second_line, 100, prcsFile);
-    for(int i = 0; i < count; i++)
+    for (int i = 0; i < count; i++)
     {
         fscanf(prcsFile, "%d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority);
     }
-    
+
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
     int algoNum = atoi(argv[3]);
     int algoArgs;
     int pid;
     struct msgbuff2 mess;
-    mess.mtype =1;
+    mess.mtype = 1;
     mess.data[0] = algoNum;
-    if(algoNum == 5)
-    {   
+    if (algoNum == 5)
+    {
         algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
-    mess.data[2] = count-1;       
+    mess.data[2] = count - 1;
     // 3. Initiate and create the scheduler and clock processes.
 
     //Sending Data
-    
-    
+
     send_val = msgsnd(upq_id, &mess, sizeof(mess.data), !IPC_NOWAIT);
     // initialize the clock
-    int sid=0;
-   
+    int sid = 0;
+
     pid = fork();
     cid = pid;
-    if(pid == 0)
+    if (pid == 0)
     {
-        execl("clk.out","clk.out",(char *)NULL);
-    }  
+        execl("clk.out", "clk.out", (char *)NULL);
+    }
     // initialize the scheduler
     pid = fork();
     sid = pid;
-    if(pid == 0)
+    if (pid == 0)
     {
-        execl("scheduler.out","scheduler.out",(char *)NULL);
+        execl("scheduler.out", "scheduler.out", (char *)NULL);
     }
     // 4. Use this function after creating the clock process to initialize clock.
     initClk();
-    // To get time use this function. 
+    // To get time use this function.
     int x = getClk();
     printf("Current Time is %d\n", x);
     // TODO Generation Main Loop
-    int i=0;
-    
-    while (i<count-1) //condition that processes are all done
+    int totalRunningTime = 0;
+    for (int y = 0; y < count - 1; y++)
+    {
+        totalRunningTime += prcsArray[y].runningtime;
+    }
+    totalRunningTime = max(totalRunningTime, prcsArray[count - 2].arrivaltime + prcsArray[count - 2].runningtime);
+    int i = 0;
+    // ! to solve error: Current Time = 59: toogle the following two lines
+    // while (i<count-1) //condition that processes are all done
+    while (x <= totalRunningTime)
     {
         x = getClk();
-        
-        if (x == (prcsArray[i].arrivaltime))
+        int y = i;
+        for (; y < count - 1; y++) // I think send makes some delay
         {
-            // printf("Process %d Started at time %d \n", prcsArray[i].id, x);
-            message.processData.id = prcsArray[i].id;
-            message.processData.arrivaltime = prcsArray[i].arrivaltime;
-            message.processData.runningtime = prcsArray[i].runningtime;
-            message.processData.priority = prcsArray[i].priority;
-            kill(sid, SIGUSR1);
-            send_val = msgsnd(upq_id, &message, sizeof(message.processData), !IPC_NOWAIT);
-            i++;
+            if (x == (prcsArray[y].arrivaltime))
+            {
+                //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+                message.processData.id = prcsArray[y].id;
+                message.processData.arrivaltime = prcsArray[y].arrivaltime;
+                message.processData.runningtime = prcsArray[y].runningtime;
+                message.processData.priority = prcsArray[y].priority;
+                // ? why should I wait?
+                send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
+                kill(sid, SIGUSR1);
+                i++;
+            }
         }
     }
     // 5. Create a data structure for processes and provide it with its parameters.
@@ -150,5 +159,3 @@ int main(int argc, char *argv[])
     destroyClk(true);
     return 0;
 }
-
-

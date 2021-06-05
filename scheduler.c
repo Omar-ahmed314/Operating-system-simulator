@@ -39,23 +39,28 @@ void recieveProcess(int signum)
     struct msgbuff message;
     //struct processData process;
     rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
-    if(rec_val==-1){
+    while (rec_val != -1)
+    {
+        struct processData *process = malloc(sizeof(struct processData));
+        process->arrivaltime = message.processData.arrivaltime;
+        process->id = message.processData.id;
+        process->runningtime = message.processData.runningtime;
+        process->priority = message.processData.priority;
+        struct PCBNode *newProcess = malloc(sizeof(struct PCBNode));
+        newProcess->pData = process;
+        newProcess->state = ready;
+        newProcess->hasStarted = false;
+        newProcess->next = 0;
+        insertNode(&PCB, newProcess);
+        recievedProcess = true;
+        rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
+        // printPCB_ID(PCB);
+        // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
+    }
+    if (rec_val == -1)
+    {
         return;
     }
-    struct processData* process = malloc(sizeof(struct processData));
-    process->arrivaltime = message.processData.arrivaltime;
-    process->id = message.processData.id;
-    process->runningtime = message.processData.runningtime;
-    process->priority = message.processData.priority;
-    struct PCBNode *newProcess = malloc(sizeof(struct PCBNode));
-    newProcess->pData = process;
-    newProcess->state = ready;
-    newProcess->hasStarted = false;
-    newProcess->next = 0;
-    insertNode(&PCB, newProcess);
-    recievedProcess = true;
-    printPCB_ID(PCB);
-    printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
 {
@@ -67,6 +72,7 @@ void clearResources(int signum)
 
 int main(int argc, char *argv[])
 {
+    initClk();
     signal(SIGINT, clearResources);
     signal(SIGUSR1, recieveProcess);
     key_t key_id;
@@ -91,6 +97,23 @@ int main(int argc, char *argv[])
     algNum = mess.data[0];
     noProcesses = mess.data[2];
     // runProcess();
+    int clk = getClk();
+    int prevClk = clk;
+    while (1)
+    {
+        if (prevClk != getClk())
+        {
+            printf("clk =  %d\n", prevClk);
+            prevClk = getClk();
+            struct PCBNode *temp = PCB;
+            while (temp)
+            {
+                printf("%d ", temp->pData->id);
+                temp = temp->next;
+            }
+            printf("\n");
+        }
+    }
     if (algNum == FCFS)
     {
         //Call Alg 1 with printing inside
@@ -113,13 +136,14 @@ int main(int argc, char *argv[])
     {
         //Call Alg 5 with printing inside
     }
-        // initClk();
-    while (true);
+    // initClk();
+    while (true)
+        ;
 
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
 
-    //destroyClk(true);
+    destroyClk(true);
 }
 void HPFAlgorithm() //////////NOT FINAL
 {

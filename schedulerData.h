@@ -41,9 +41,13 @@ void insertNode(struct PCBNode **head, struct PCBNode *Node)
         *head = Node;
         return;
     }
-    struct PCBNode *temp = (*head)->next;
-    (*head)->next = Node;
+
+    struct PCBNode *temp = (*head);
+    (*head)= Node;
     Node->next = temp;
+    // struct PCBNode *temp = (*head)->next;
+    // (*head)->next = Node;
+    // Node->next = temp;
 }
 //send struct PCBNode** head, ID
 void deleteByID(struct PCBNode **head, int ID)
