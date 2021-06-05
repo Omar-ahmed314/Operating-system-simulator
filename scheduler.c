@@ -33,17 +33,15 @@ struct msgbuff2
     int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
 };
 int downq_id, upq_id, send_val, rec_val;
-bool newDataArried = false;
 void recieveProcess(int signum)
 {
     //? where is starttime, remaining time?
     struct msgbuff message;
     //struct processData process;
-    rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
+    rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
     if(rec_val==-1){
         return;
     }
-    newDataArried = true;
     struct processData* process = malloc(sizeof(struct processData));
     process->arrivaltime = message.processData.arrivaltime;
     process->id = message.processData.id;
@@ -115,7 +113,7 @@ int main(int argc, char *argv[])
     {
         //Call Alg 5 with printing inside
     }
-        initClk();
+        // initClk();
     while (true);
 
     //TODO: implement the scheduler.
