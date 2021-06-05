@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     mess.data[0] = algoNum;
     if (algoNum == 5)
     {
-        algoArgs = atoi(argv[4]);
+        algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
     mess.data[2] = count - 1;
@@ -153,6 +153,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+    while(1);
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     // 7. Clear clock resources

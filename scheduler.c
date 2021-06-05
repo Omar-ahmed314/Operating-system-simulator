@@ -104,7 +104,9 @@ int main(int argc, char *argv[])
     int clk = getClk();
     int prevClk = clk;
     struct PCBNode *currentProcess = NULL;
-    while (1)
+    printf("algorithm number = %d\n", algNum);
+    int processesCounter = noProcesses;
+    while (processesCounter)
     {
         // entered a new second
         if (prevClk != getClk())
@@ -115,6 +117,7 @@ int main(int argc, char *argv[])
                 if (currentProcess->remainingTime <= 0)
                 {
                     deleteByID(&PCB, currentProcess->pData->id);
+                    processesCounter--;
                 }
             }
             if (algNum == FCFS)
@@ -140,7 +143,8 @@ int main(int argc, char *argv[])
                 printPCB(PCB);
                 currentProcess = findTarget(SRTN, PCB);
                 printf("SRTN\n");
-                printf("current process id in SRTN is %d\n", currentProcess->pData->id);
+                if(currentProcess)
+                    printf("current process id in SRTN is %d\n", currentProcess->pData->id);
             }
             else if (algNum == RR)
             {
@@ -152,8 +156,6 @@ int main(int argc, char *argv[])
     }
 
     // initClk();
-    while (true)
-        ;
 
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
