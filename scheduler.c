@@ -78,7 +78,9 @@ int main(int argc, char *argv[])
     key_t key_id;
     recievedProcess = false;
     key_id = 99;
-
+    // ? why we need two message queues?
+    // ? and why not keyfile?
+    // ? why with the same ID?
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
     if (downq_id == -1)
@@ -101,41 +103,34 @@ int main(int argc, char *argv[])
     int prevClk = clk;
     while (1)
     {
+        // entered a new second
         if (prevClk != getClk())
         {
+            if (algNum == FCFS)
+            {
+                //Call Alg 1 with printing inside
+            }
+            else if (algNum == SJF)
+            {
+                //Call Alg 2 with printing inside
+            }
+            else if (algNum == HPF)
+            {
+                //Call Alg 3 with printing inside
+            }
+            else if (algNum == SRTN)
+            {
+                SRTNAlgorithm(PCB);
+            }
+            else if (algNum == RR)
+            {
+                //Call Alg 5 with printing inside
+            }
             printf("clk =  %d\n", prevClk);
             prevClk = getClk();
-            struct PCBNode *temp = PCB;
-            while (temp)
-            {
-                printf("%d ", temp->pData->id);
-                temp = temp->next;
-            }
-            printf("\n");
         }
     }
-    if (algNum == FCFS)
-    {
-        //Call Alg 1 with printing inside
-    }
-    else if (algNum == SJF)
-    {
-        //Call Alg 2 with printing inside
-    }
-    else if (algNum == HPF)
-    {
-        //Call Alg 3 with printing inside
-    }
-    else if (algNum == SRTN)
-    {
-        //Call Alg 4 with printing inside
 
-        SRTNAlgorithm(PCB);
-    }
-    else if (algNum == RR)
-    {
-        //Call Alg 5 with printing inside
-    }
     // initClk();
     while (true)
         ;

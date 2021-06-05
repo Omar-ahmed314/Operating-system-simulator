@@ -116,5 +116,44 @@ int countPCB(struct PCBNode*head){
     return count;
 }
 // struct PCBNode* createPCBNode(struct processData*process,int state,bool hasStarted,struct PCBNode*next,)
-
+struct PCBNode* findHPF(struct PCBNode*head){
+    struct PCBNode* highestPrioriy = head;
+    while(head){
+        if(head->pData->priority>highestPrioriy->pData->priority){
+            highestPrioriy = head;
+        }
+        head = head->next;
+    }
+    return highestPrioriy;
+}
+struct PCBNode* findSRTN(struct PCBNode*head){
+    struct PCBNode* shortestRemaining = head;
+    while(head){
+        if(head->remainingTime < shortestRemaining->remainingTime){
+            shortestRemaining = head;
+        }
+        head = head->next;
+    }
+    return shortestRemaining;
+}
+struct PCBNode* findFCFS(struct PCBNode*head){
+    struct PCBNode* shortestRemaining = head;
+    while(head){
+        if(head->pData->arrivaltime < shortestRemaining->pData->arrivaltime){
+            shortestRemaining = head;
+        }
+        head = head->next;
+    }
+    return shortestRemaining;
+}
+struct PCBNode* findSJF(struct PCBNode*head){
+    struct PCBNode* shortestRemaining = head;
+    while(head){
+        if(head->pData->runningtime < shortestRemaining->pData->runningtime){
+            shortestRemaining = head;
+        }
+        head = head->next;
+    }
+    return shortestRemaining;
+}
 #endif
