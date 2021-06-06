@@ -77,6 +77,7 @@ void deleteByID(struct PCBNode **head, int ID)
     if ((*head)->pData->id == ID)
     {
         *head = (*head)->next;
+        free(temp->pData);
         free(temp);
         temp = 0;
         return;
@@ -91,6 +92,7 @@ void deleteByID(struct PCBNode **head, int ID)
     if (next) //found
     {
         temp->next = next->next;
+        free(next->pData);
         free(next);
         return;
     }
@@ -109,8 +111,24 @@ struct PCBNode *searchID(struct PCBNode *head, int ID)
     return 0;
 }
 struct PCBNode* copyNode(struct PCBNode*process){
-    struct PCBNode* temp = (struct PCBNode*)calloc(1,sizeof(struct PCBNodes));
+    struct PCBNode* temp = (struct PCBNode*)calloc(1,sizeof(struct PCBNode));
+    struct processData* temp2 = (struct processData*)calloc(1,sizeof(struct processData));
     temp->pData->id = process->pData->id;
+    temp->state = process->state;
+    temp->hasStarted = process->hasStarted;
+    temp->waitingTime = process->waitingTime;
+    temp->remainingTime = process->remainingTime;
+    temp->startTime = process->startTime;
+    temp->next = process->next;
+    temp->pid = process->pid;
+    temp->lastSeen = process->lastSeen;
+    temp2->arrivaltime = process->pData->arrivaltime;
+    temp2->id = process->pData->id;
+    temp2->runningtime = process->pData->runningtime;
+    temp2->priority = process->pData->priority;
+    temp->pData = temp2;
+
+    return temp;
 }
 void destroyPCB(struct PCBNode *head)
 {

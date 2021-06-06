@@ -171,7 +171,9 @@ int main(int argc, char *argv[])
                     currentProcess = currentProcess->next;
                     if (temp->remainingTime <= 0)
                     {
+                        struct PCBNode* ptr = copyNode(temp);
                         deleteByID(&PCB, temp->pData->id);
+                        insertNode(&PCB, ptr);
                         processesCounter++;
                     }
                     if (!currentProcess)
