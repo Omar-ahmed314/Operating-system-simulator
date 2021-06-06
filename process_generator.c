@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
     while (!feof(prcsFile))
     {
         fgets(first_line, 100, prcsFile);
+        // count number of proceses:
+        // if(first_line[0]!='#')
         count++;
     }
 
@@ -162,6 +164,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+    // printf("Process Generator ending\n");
     while(1);// process generator ends earlier and this should be handled, now scheduler ends all processes
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.

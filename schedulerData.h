@@ -28,14 +28,16 @@ enum Algorithm
 
 struct PCBNode
 {
-    int state;
-    bool hasStarted;
-    struct processData *pData;
-    int waitingTime;
+    int state; // Done
+    bool hasStarted;// done: first time for forking
+    struct processData *pData; // a story on its own, already done
+    int waitingTime; // total
     int remainingTime;
-    int startTime;
-    struct PCBNode *next;
-    int pid;
+    int startTime; // Done
+    struct PCBNode *next; // already done in insertion
+    int pid; // already done in forking
+    //? delete this?
+    int lastSeen; //for calculating waitingTime
 };
 void insertNode(struct PCBNode **head, struct PCBNode *Node) // like a queue
 {
@@ -105,6 +107,10 @@ struct PCBNode *searchID(struct PCBNode *head, int ID)
         temp = temp->next;
     }
     return 0;
+}
+struct PCBNode* copyNode(struct PCBNode*process){
+    struct PCBNode* temp = (struct PCBNode*)calloc(1,sizeof(struct PCBNodes));
+    temp->pData->id = process->pData->id;
 }
 void destroyPCB(struct PCBNode *head)
 {

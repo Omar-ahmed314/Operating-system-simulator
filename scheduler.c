@@ -1,11 +1,8 @@
-//TODO processes Don't end
-//TODO process PG,  scheduler, clk don't end
+//TODO calculations file
+//TODO DE7K: running several times
 //TODO Round Robin needs modification
-//! one process -> didn't end
-//! clearing resources results in problems
 #include "headers.h"
 #include "schedulerData.h"
-#include "SRTN.h"
 
 void stopProcess(struct PCBNode *);
 void startProcess(struct PCBNode *);
@@ -74,6 +71,8 @@ void recieveProcess(int signum)
     newProcess->hasStarted = false;
     newProcess->next = 0;
     newProcess->pid = 0;
+    newProcess->lastSeen = 0;
+    newProcess->waitingTime = 0;
     insertNode(&PCB, newProcess);
     recievedProcess = true;
     currentProcessesNumber++;
@@ -98,7 +97,7 @@ int main(int argc, char *argv[])
     initClk();
     signal(SIGINT, clearResources);
     signal(SIGUSR1, recieveProcess);
-    mess_rem.mtype = 3; //kaaaaaaaaaaaaaaaaaaaaaaaaaak + aaaaaaaaaaaaahhhh
+    mess_rem.mtype = 3; 
     key_t key_id;
     recievedProcess = false;
     //@ message queues
@@ -135,6 +134,7 @@ int main(int argc, char *argv[])
     int clk = getClk();
     int prevClk = clk;
     struct PCBNode *currentProcess = NULL;
+    printf("Total number of processes = %d\n",noProcesses);
     //printf("algorithm number = %d\n", algNum);
     //flush(stdout);
     int processesCounter = 0;
@@ -144,10 +144,6 @@ int main(int argc, char *argv[])
     // @@@@@@ algorithms @@@@@
     while (processesCounter < noProcesses)
     {
-        if (recieveProcess)
-        {
-            recievedProcess = false;
-        }
         if (prevClk != getClk())
         {
             // struct msgbuff message;
@@ -230,13 +226,16 @@ int main(int argc, char *argv[])
     }
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
-
+    printf("Scheduler Ending\n");
     clearResources(SIGINT);
 }
 void stopProcess(struct PCBNode *process)
 {
     if (process)
     {
+        process->state = blocked;
+        process->lastSeen = getClk();
+        //TODO fprintf to the file that it is blocked
         kill(process->pid, SIGSTOP);
         int id = process->pData->id;
         // //printf("@CLK = %d: stopping prcess of id = %d\n", getClk(), id);
@@ -249,9 +248,12 @@ void startProcess(struct PCBNode *process)
     {
         return;
     }
+    process->state = running;
+    process->waitingTime += (getClk() - process->lastSeen);
     // fork
     if (!process->hasStarted)
     {
+        process->startTime = getClk();
         int pid;
         pid = fork();
         if (pid == 0)
