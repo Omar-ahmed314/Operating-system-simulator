@@ -1,0 +1,5 @@
+dereferencing pointer? use this: (ptr? ptr->data:-1);
+Don't initialize inside code... make functions to initialize structs or you will forget some members
+Make Data structures, test them and then use them
+printf \n
+global variables are set to zero, change if needed

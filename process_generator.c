@@ -12,13 +12,13 @@ int cid, downq_id, upq_id, send_val, rec_val;
 
 struct msgbuff
 {
-    int mtype;
+    long mtype;
     struct processData processData;
 };
 
 struct msgbuff2
 {
-    int mtype;
+    long mtype;
     int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
 };
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
     send_val = msgsnd(upq_id, &mess, sizeof(mess.data), !IPC_NOWAIT);
     // initialize the clock
     int sid = 0;
-
+    message.mtype = 2;
     pid = fork();
     cid = pid;
     if (pid == 0)

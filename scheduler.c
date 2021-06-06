@@ -37,19 +37,19 @@ struct PCBNode *PCB = 0;
 struct PCBNode *runningPCB;
 struct msgbuff
 {
-    int mtype;
+    long mtype;
     struct processData processData;
 };
 struct msgbuff2
 {
-    int mtype;
+    long mtype;
     int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
 };
 int downq_id_rem, rec_val_rem;
 key_t key_id_rem;
 struct msgbuffRem
 {
-    int mtype;
+    long mtype;
     int remaining;
 } mess_rem;
 int downq_id, upq_id, send_val, rec_val;
@@ -92,12 +92,13 @@ void clearResources(int signum)
 // @ Main function
 int main(int argc, char *argv[])
 {
+    // printf("mess_rem.mtype = %ld\n", mess_rem.mtype);
     //? what should the last integer be?
     // setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     initClk();
     signal(SIGINT, clearResources);
     signal(SIGUSR1, recieveProcess);
-
+    mess_rem.mtype = 3; //kaaaaaaaaaaaaaaaaaaaaaaaaaak + aaaaaaaaaaaaahhhh
     key_t key_id;
     recievedProcess = false;
     //@ message queues
@@ -188,7 +189,7 @@ int main(int argc, char *argv[])
                 // @ tracing
                 //printf("@@@CLK = %d: current process id = %d and PID = %d\n", getClk(), currentProcess->pData->id, currentProcess->pid);
                 // //flush(stdout);
-                //changed state
+                //context switching
                 if (previousId != currentProcess->pData->id)
                 {
                     struct PCBNode *previousProc = searchID(PCB, previousId); // starting clk = 0 or previous deleted
@@ -232,6 +233,58 @@ int main(int argc, char *argv[])
 
     clearResources(SIGINT);
 }
+void stopProcess(struct PCBNode *process)
+{
+    if (process)
+    {
+        kill(process->pid, SIGSTOP);
+        int id = process->pData->id;
+        // //printf("@CLK = %d: stopping prcess of id = %d\n", getClk(), id);
+    }
+}
+void startProcess(struct PCBNode *process)
+{
+    // fork or continue hasStarted
+    if (!process)
+    {
+        return;
+    }
+    // fork
+    if (!process->hasStarted)
+    {
+        int pid;
+        pid = fork();
+        if (pid == 0)
+        {
+            execl("process.out", "process.out", (char *)NULL);
+        }
+        process->remainingTime = process->pData->runningtime;
+        process->pid = pid;
+        sendRem(process->remainingTime);
+        process->hasStarted = true;
+    }
+    //conitnue
+    else
+    {
+        kill(process->pid, SIGCONT);
+    }
+    // common
+    // //printf("@CLK = %d: starting prcess of id = %d\n", getClk(), process->pData->id);
+}
+void sendRem(int remainingTime)
+{
+    if (remainingTime == 0)
+    {
+        printf("^^^^^^^^^^^^^^^Sending zero to process^^^^^^^^^^\n");
+    }
+    mess_rem.remaining = remainingTime;
+    int send_val_rem = msgsnd(downq_id_rem, &mess_rem, sizeof(mess_rem.remaining), IPC_NOWAIT);
+}
+void destroyRemMsg()
+{
+    msgctl(downq_id_rem, IPC_RMID, (struct msqid_ds *)0);
+}
+
 void HPFAlgorithm() //////////NOT FINAL
 {
     while (processesDone < noProcesses || runningPCB != NULL)
@@ -305,51 +358,4 @@ void RRAlgorithm()
             RunningP = RunningP->next;
         }
     }
-}
-void stopProcess(struct PCBNode *process)
-{
-    if (process)
-    {
-        kill(process->pid, SIGSTOP);
-        int id = process->pData->id;
-        // //printf("@CLK = %d: stopping prcess of id = %d\n", getClk(), id);
-    }
-}
-void startProcess(struct PCBNode *process)
-{
-    // fork or continue hasStarted
-    if (!process)
-    {
-        return;
-    }
-    // fork
-    if (!process->hasStarted)
-    {
-        int pid;
-        pid = fork();
-        if (pid == 0)
-        {
-            execl("process.out", "process.out", (char *)NULL);
-        }
-        process->remainingTime = process->pData->runningtime;
-        process->pid = pid;
-        sendRem(process->remainingTime);
-        process->hasStarted = true;
-    }
-    //conitnue
-    else
-    {
-        kill(process->pid, SIGCONT);
-    }
-    // common
-    // //printf("@CLK = %d: starting prcess of id = %d\n", getClk(), process->pData->id);
-}
-void sendRem(int remainingTime)
-{
-    mess_rem.remaining = remainingTime;
-    int send_val_rem = msgsnd(downq_id_rem, &mess_rem, sizeof(mess_rem.remaining), IPC_NOWAIT);
-}
-void destroyRemMsg()
-{
-    msgctl(downq_id_rem, IPC_RMID, (struct msqid_ds *)0);
 }
