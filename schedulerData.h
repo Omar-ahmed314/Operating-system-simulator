@@ -178,7 +178,7 @@ struct PCBNode *findTarget(int algoNum, struct PCBNode *head)
     struct PCBNode *target = head;
     while (head)
     {
-        if (condition(algoNum, head, target)&&head->hasStarted)
+        if (condition(algoNum, head, target))
         {
             target = head;
         }

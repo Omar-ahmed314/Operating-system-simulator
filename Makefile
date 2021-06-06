@@ -10,7 +10,7 @@ clean:
 	rm -f *.out
 	#rm -f processes.txt
 
-all: clean build
+all: clean build run
 
 run:
 	./process_generator.out processes.txt -sch 4

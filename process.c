@@ -24,21 +24,21 @@ int main(int agrc, char *argv[])
     rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
     if (rec_val == -1)
     {
-        printf("$Proc: error in receiving value, errno = %d\n", errno);
+        printf("$Proc pid = %d: error in receiving value, errno = %d\n", getpid(), errno);
         exit(errno);
     }
     remainingtime = mess.remaining;
-    printf(">> Hi new process, received remaining time = %d\n", remainingtime);
+    printf(">> Hi pid = %d, received remaining time = %d & is created at CLK = %d\n",getpid(), remainingtime,getClk());
     while (remainingtime > 0)
     {
         rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
         if (rec_val == -1)
         {
-            printf("$Proc error in receiving value, errno = %d\n", errno);
+            // printf("$Proc pid = %d: error in receiving value, errno = %d\n", getpid(), errno);
             exit(errno);
         }
         remainingtime = mess.remaining;
-        printf(">> process received remaining time = %d\n", remainingtime);
+        // printf(">> process received remaining time = %d\n", remainingtime);
     }
     destroyClk(false);
     printf("Child Process is ending\n");

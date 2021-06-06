@@ -30,10 +30,13 @@ void clearResources(int signum)
     msgctl(downq_id, IPC_RMID, (struct msqid_ds *)0);
     msgctl(upq_id, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(true);
+    // killpg(0,SIGKILL);
 }
 
 int main(int argc, char *argv[])
 {
+
+    // setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     signal(SIGINT, clearResources);
     key_t key_id;
 
@@ -43,12 +46,12 @@ int main(int argc, char *argv[])
     struct msgbuff message;
     if (downq_id == -1)
     {
-        perror("Error in create");
+        perror("Error in create\n");
         exit(-1);
     }
     if (upq_id == -1)
     {
-        perror("Error in create");
+        perror("Error in create\n");
         exit(-1);
     }
 
@@ -122,7 +125,8 @@ int main(int argc, char *argv[])
     initClk();
     // To get time use this function.
     int x = getClk();
-    printf("Current Time is %d\n", x);
+    //printf("Current Time is %d\n", x);
+    //flush(stdout);
     // TODO Generation Main Loop
     int totalRunningTime = 0;
     for (int y = 0; y < count - 1; y++)
@@ -130,7 +134,8 @@ int main(int argc, char *argv[])
         totalRunningTime += prcsArray[y].runningtime;
     }
     totalRunningTime = max(totalRunningTime, prcsArray[count - 2].arrivaltime + prcsArray[count - 2].runningtime);
-    printf("total running time = %d\n", totalRunningTime);
+    //printf("total running time = %d\n", totalRunningTime);
+    //flush(stdout);
     int i = 0;
     // ! to solve error: Current Time = 59: toogle the following two lines
     // while (i<count-1) //condition that processes are all done
@@ -140,15 +145,18 @@ int main(int argc, char *argv[])
         int y = i;
         // for (; y < count - 1; y++) // I think send makes some delay
         {
-            if (x  == (prcsArray[y].arrivaltime))
+            if (x  == (prcsArray[y].arrivaltime - 1))
             {
-                //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+                ////printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+                // //flush(stdout);
                 message.processData.id = prcsArray[y].id;
                 message.processData.arrivaltime = prcsArray[y].arrivaltime;
                 message.processData.runningtime = prcsArray[y].runningtime;
                 message.processData.priority = prcsArray[y].priority;
                 // ? why should I wait?
                 send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
+                //printf("PG sending usr1 to Scheduler\n");
+                 
                 kill(sid, SIGUSR1);
                 i++;
             }
