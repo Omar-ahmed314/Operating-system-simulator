@@ -26,11 +26,10 @@ struct msgbuff2
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    signal(SIGINT, SIG_DFL);
     msgctl(downq_id, IPC_RMID, (struct msqid_ds *)0);
     msgctl(upq_id, IPC_RMID, (struct msqid_ds *)0);
     destroyClk(true);
-    killpg(getpgrp(), SIGINT);
-    signal(SIGINT, SIG_DFL);
 }
 
 int main(int argc, char *argv[])
@@ -141,7 +140,7 @@ int main(int argc, char *argv[])
         int y = i;
         // for (; y < count - 1; y++) // I think send makes some delay
         {
-            if (x - 1 == (prcsArray[y].arrivaltime))
+            if (x  == (prcsArray[y].arrivaltime))
             {
                 //printf("Process %d Started at time %d \n", prcsArray[i].id, x);
                 message.processData.id = prcsArray[y].id;
@@ -155,11 +154,10 @@ int main(int argc, char *argv[])
             }
         }
     }
-    // while(1);// process generator ends earlier and this should be handled, now scheduler ends all processes
+    while(1);// process generator ends earlier and this should be handled, now scheduler ends all processes
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     // 7. Clear clock resources
-    destroyClk(true);
-    raise(SIGINT);
+    clearResources(SIGINT);
     return 0;
 }

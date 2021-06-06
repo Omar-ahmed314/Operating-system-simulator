@@ -47,45 +47,42 @@ struct msgbuffRem
     int remaining;
 } mess_rem;
 int downq_id, upq_id, send_val, rec_val;
+
+//@ receive handler
 void recieveProcess(int signum)
 {
     //? where is starttime, remaining time?
     struct msgbuff message;
     //struct processData process;
     rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, !IPC_NOWAIT);
-    while (rec_val != -1)
-    {
-        struct processData *process = malloc(sizeof(struct processData));
-        process->arrivaltime = message.processData.arrivaltime;
-        process->id = message.processData.id;
-        process->runningtime = message.processData.runningtime;
-        process->priority = message.processData.priority;
-        struct PCBNode *newProcess = malloc(sizeof(struct PCBNode));
-        newProcess->pData = process;
-        newProcess->state = ready;
-        newProcess->hasStarted = false;
-        newProcess->next = 0;
-        newProcess->pid = 0;
-        insertNode(&PCB, newProcess);
-        recievedProcess = true;
-        currentProcessesNumber++;
-        rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
-        // printPCB(PCB);
-        // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
-    }
-    if (rec_val == -1)
-    {
-        return;
-    }
+
+    struct processData *process = malloc(sizeof(struct processData));
+    process->arrivaltime = message.processData.arrivaltime;
+    process->id = message.processData.id;
+    process->runningtime = message.processData.runningtime;
+    process->priority = message.processData.priority;
+    struct PCBNode *newProcess = malloc(sizeof(struct PCBNode));
+    newProcess->pData = process;
+    newProcess->state = ready;
+    newProcess->hasStarted = false;
+    newProcess->next = 0;
+    newProcess->pid = 0;
+    insertNode(&PCB, newProcess);
+    recievedProcess = true;
+    currentProcessesNumber++;
+
+    // printPCB(PCB);
+    // printf("%d %d \n", message.processData.arrivaltime, message.processData.id);
 }
 void clearResources(int signum)
 {
     //TODO Clears all resources in case of interruption
+    signal(SIGINT, SIG_DFL);
     destroyPCB(PCB);
-    destroyClk(false);
     destroyRemMsg();
-    kill(getppid(), SIGINT);
+    destroyClk(true);
 }
+// @ Main function
 int main(int argc, char *argv[])
 {
     initClk();
@@ -93,6 +90,7 @@ int main(int argc, char *argv[])
     signal(SIGUSR1, recieveProcess);
     key_t key_id;
     recievedProcess = false;
+    //@ message queues
     key_id = 99;
     key_id_rem = 167;
     // ? why we need two message queues?
@@ -100,7 +98,7 @@ int main(int argc, char *argv[])
     // ? why with the same ID?
     downq_id = msgget(key_id, 0666 | IPC_CREAT);
     upq_id = msgget(key_id, 0666 | IPC_CREAT);
-    downq_id_rem = msgget(key_id, 0666 | IPC_CREAT);
+    downq_id_rem = msgget(key_id_rem, 0666 | IPC_CREAT);
     if (downq_id == -1)
     {
         perror("Error in create");
@@ -127,10 +125,11 @@ int main(int argc, char *argv[])
     int prevClk = clk;
     struct PCBNode *currentProcess = NULL;
     printf("algorithm number = %d\n", algNum);
-    int processesCounter = noProcesses;
+    int processesCounter = 0;
     int previousId = 0;
     int roundRobinCounter = quantum;
-    while (1)
+    // @@@@@@ algorithms @@@@@
+    while (processesCounter < noProcesses)
     {
         // every new second:
         // currentProcess
@@ -138,12 +137,17 @@ int main(int argc, char *argv[])
         // entered a new second
         if (prevClk != getClk())
         {
+            // @ tracing
+            printf("--- @CLK = %d-> PCB is:", getClk());
+            printPCB(PCB);
+            //# printf("CLK = %d\n", getClk());
             if (algNum != RR)
             {
                 currentProcess = findTarget(algNum, PCB);
             }
             else // round robin
             {
+                // > you may think round robin isn't working but I think it's like a circular queue
                 if (!currentProcess) // at the beginning of execution
                 {
                     currentProcess = PCB;
@@ -157,6 +161,7 @@ int main(int argc, char *argv[])
                     if (temp->remainingTime <= 0)
                     {
                         deleteByID(&PCB, temp->pData->id);
+                        processesCounter++;
                     }
                     if (!currentProcess)
                     {
@@ -173,11 +178,11 @@ int main(int argc, char *argv[])
                     if (previousProc)
                     {
                         stopProcess(previousProc);
-                        printf("Previous process ID = %d\n", previousProc->pData->id);
+                        //# printf("Previous process ID = %d\n", previousProc->pData->id);
                     }
                     else
                     {
-                        printf("Previous process is already deleted\n");
+                        //# printf("Previous process is already deleted\n");
                     }
                     startProcess(currentProcess);
                     // changes for next loop
@@ -187,30 +192,25 @@ int main(int argc, char *argv[])
                 sendRem(currentProcess->remainingTime);
                 if (currentProcess->remainingTime <= 0)
                 {
-                    printf("deleted process of ID %d\n", currentProcess->pData->id);
-                    if (algNum != RR) // @ because it will be needed to get next one
+                    //# printf("deleted process of ID %d\n", currentProcess->pData->id);
+                    if (algNum != RR) // % because it will be needed to get next one
                     {
                         deleteByID(&PCB, currentProcess->pData->id);
+                        processesCounter++;
                     }
                 }
-                printPCB(PCB);
+                //# printf("PCB: ");
+                // printPCB(PCB);
             }
-
-            if (algNum == RR)
-            {
-                //Call Alg 5 with printing inside
-            }
-            printf("clk =  %d\n", prevClk);
             prevClk = getClk();
+            printf("\n");
         }
     }
-
-    // initClk();
 
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
 
-    destroyClk(true);
+    clearResources(SIGINT);
 }
 void HPFAlgorithm() //////////NOT FINAL
 {
@@ -292,7 +292,7 @@ void stopProcess(struct PCBNode *process)
     {
         kill(process->pid, SIGSTOP);
         int id = process->pData->id;
-        printf("stopping prcess of id = %d\n", id);
+        // printf("@CLK = %d: stopping prcess of id = %d\n", getClk(), id);
     }
 }
 void startProcess(struct PCBNode *process)
@@ -322,12 +322,12 @@ void startProcess(struct PCBNode *process)
         kill(process->pid, SIGCONT);
     }
     // common
-    printf("starting prcess of id = %d\n", process->pData->id);
+    // printf("@CLK = %d: starting prcess of id = %d\n", getClk(), process->pData->id);
 }
 void sendRem(int remainingTime)
 {
     mess_rem.remaining = remainingTime;
-    int send_val_rem = msgsnd(upq_id, &mess_rem, sizeof(mess_rem.remaining), IPC_NOWAIT);
+    int send_val_rem = msgsnd(downq_id_rem, &mess_rem, sizeof(mess_rem.remaining), IPC_NOWAIT);
 }
 void destroyRemMsg()
 {
