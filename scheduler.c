@@ -151,6 +151,7 @@ int main(int argc, char *argv[])
     int processesCounter = 0;
     int previousId = 0;
     int roundRobinCounter = quantum;
+    int arrivedProcessesCounter = 0;
     //printf("Entering\n");
     // @@@@@@ algorithms @@@@@
     while (processesCounter < noProcesses)
@@ -162,11 +163,17 @@ int main(int argc, char *argv[])
         {
             //>>>> receive number of received processes:
             struct msgbuff_nproc msg_n;
-            rec_val = msgrcv(upq_id, &msg_n, sizeof(msg_n.arrivedProccesses), 0, !IPC_NOWAIT);
-            for(int i = 0; i< msg_n.arrivedProccesses; i++){
-                recieveProcess(0);// no meaning for the parameter
+            if (arrivedProcessesCounter < noProcesses) // there are still processes to receive
+            {
+                rec_val = msgrcv(upq_id, &msg_n, sizeof(msg_n.arrivedProccesses), 0, !IPC_NOWAIT);
+                for (int i = 0; i < msg_n.arrivedProccesses; i++)
+                {
+                    recieveProcess(0); // no meaning for the parameter
+                    arrivedProcessesCounter++; // can make it with += arriv...
+                }
+                if (msg_n.arrivedProccesses)
+                    printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
             }
-            printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n",getClk(),msg_n.arrivedProccesses,countPCB(PCB));
             // struct msgbuff message;
             // //struct processData process;
             // rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);

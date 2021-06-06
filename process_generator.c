@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
     int i = 0;
     // ! to solve error: Current Time = 59: toogle the following two lines
     int prevClk = getClk();
+    // printf("BBBBBBBefore entering PG: count = %d\n", count);
     while (i < count - 1) //condition that processes are all done
     // while (x <= totalRunningTime)
     {
@@ -154,23 +155,22 @@ int main(int argc, char *argv[])
         {
             continue;
         }
+        // printf("HHHHHHHHHi PG @CLK = %d\n", x);
         // entering a new second
         int arrivedProcesses = 0;
         prevClk = x;
         for (int g = i; g < count - 1; g++)
         {
-            if (x == (prcsArray[g].arrivaltime - 1))
+            if (x == (prcsArray[g].arrivaltime))
             {
                 arrivedProcesses++;
             }
         }
-        if (arrivedProcesses)
-        {
-            struct msgbuff_nproc mess_n;
-            mess_n.mtype = 7;
-            mess_n.arrivedProccesses = arrivedProcesses;
-            send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), IPC_NOWAIT);
-        }
+        struct msgbuff_nproc mess_n;
+        mess_n.mtype = 7;
+        mess_n.arrivedProccesses = arrivedProcesses;
+        send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), IPC_NOWAIT);
+
         for (int g = 0; g < arrivedProcesses; g++)
         {
             message.processData.id = prcsArray[i].id;
@@ -179,10 +179,10 @@ int main(int argc, char *argv[])
             message.processData.priority = prcsArray[i].priority;
             // ? why should I wait?
             send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
-            printf("~~PG sent process of ID = %d\n",message.processData.id);
+            // printf("~~PG sent process of ID = %d\n", message.processData.id);
             i++;
         }
-
+        printf("PG ended\n");
         // @ delete the following
         // int y = i;
         // // for (; y < count - 1; y++) // I think send makes some delay
