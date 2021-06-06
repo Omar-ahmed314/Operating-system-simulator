@@ -28,14 +28,14 @@ enum Algorithm
 
 struct PCBNode
 {
-    int state; // Done
-    bool hasStarted;// done: first time for forking
+    int state;                 // Done
+    bool hasStarted;           // done: first time for forking
     struct processData *pData; // a story on its own, already done
-    int waitingTime; // total
+    int waitingTime;           // total
     int remainingTime;
-    int startTime; // Done
+    int startTime;        // Done
     struct PCBNode *next; // already done in insertion
-    int pid; // already done in forking
+    int pid;              // already done in forking
     //? delete this?
     int lastSeen; //for calculating waitingTime
 };
@@ -61,7 +61,8 @@ void insertNodeReversed(struct PCBNode **head, struct PCBNode *Node) // like a s
         return;
     }
     struct PCBNode *temp = (*head);
-    while (temp->next != NULL){
+    while (temp->next != NULL)
+    {
         temp = temp->next;
     }
     temp->next = Node;
@@ -110,9 +111,17 @@ struct PCBNode *searchID(struct PCBNode *head, int ID)
     }
     return 0;
 }
-struct PCBNode* copyNode(struct PCBNode*process){
-    struct PCBNode* temp = (struct PCBNode*)calloc(1,sizeof(struct PCBNode));
-    struct processData* temp2 = (struct processData*)calloc(1,sizeof(struct processData));
+struct PCBNode *copyNode(struct PCBNode *process)
+{
+    struct PCBNode *temp = (struct PCBNode *)malloc(sizeof(struct PCBNode));
+    struct processData *temp2 = (struct processData *)malloc(sizeof(struct processData));
+    
+    temp2->arrivaltime = process->pData->arrivaltime;
+    temp2->id = process->pData->id;
+    temp2->runningtime = process->pData->runningtime;
+    temp2->priority = process->pData->priority;
+
+    temp->pData = temp2;
     temp->pData->id = process->pData->id;
     temp->state = process->state;
     temp->hasStarted = process->hasStarted;
@@ -122,11 +131,6 @@ struct PCBNode* copyNode(struct PCBNode*process){
     temp->next = process->next;
     temp->pid = process->pid;
     temp->lastSeen = process->lastSeen;
-    temp2->arrivaltime = process->pData->arrivaltime;
-    temp2->id = process->pData->id;
-    temp2->runningtime = process->pData->runningtime;
-    temp2->priority = process->pData->priority;
-    temp->pData = temp2;
 
     return temp;
 }

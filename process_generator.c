@@ -7,13 +7,18 @@ struct processData
     int runningtime;
     int id;
 };
-
 int cid, downq_id, upq_id, send_val, rec_val;
 
 struct msgbuff
 {
     long mtype;
     struct processData processData;
+};
+
+struct msgbuff_nproc
+{
+    long mtype;
+    int arrivedProccesses;
 };
 
 struct msgbuff2
@@ -140,32 +145,68 @@ int main(int argc, char *argv[])
     //flush(stdout);
     int i = 0;
     // ! to solve error: Current Time = 59: toogle the following two lines
-    // while (i<count-1) //condition that processes are all done
-    while (x <= totalRunningTime)
+    int prevClk = getClk();
+    while (i < count - 1) //condition that processes are all done
+    // while (x <= totalRunningTime)
     {
         x = getClk();
-        int y = i;
-        // for (; y < count - 1; y++) // I think send makes some delay
+        if (x == prevClk)
         {
-            if (x  == (prcsArray[y].arrivaltime - 1))
+            continue;
+        }
+        // entering a new second
+        int arrivedProcesses = 0;
+        prevClk = x;
+        for (int g = i; g < count - 1; g++)
+        {
+            if (x == (prcsArray[g].arrivaltime - 1))
             {
-                ////printf("Process %d Started at time %d \n", prcsArray[i].id, x);
-                // //flush(stdout);
-                message.processData.id = prcsArray[y].id;
-                message.processData.arrivaltime = prcsArray[y].arrivaltime;
-                message.processData.runningtime = prcsArray[y].runningtime;
-                message.processData.priority = prcsArray[y].priority;
-                // ? why should I wait?
-                send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
-                //printf("PG sending usr1 to Scheduler\n");
-                 
-                kill(sid, SIGUSR1);
-                i++;
+                arrivedProcesses++;
             }
         }
+        if (arrivedProcesses)
+        {
+            struct msgbuff_nproc mess_n;
+            mess_n.mtype = 7;
+            mess_n.arrivedProccesses = arrivedProcesses;
+            send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), IPC_NOWAIT);
+        }
+        for (int g = 0; g < arrivedProcesses; g++)
+        {
+            message.processData.id = prcsArray[i].id;
+            message.processData.arrivaltime = prcsArray[i].arrivaltime;
+            message.processData.runningtime = prcsArray[i].runningtime;
+            message.processData.priority = prcsArray[i].priority;
+            // ? why should I wait?
+            send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
+            printf("~~PG sent process of ID = %d\n",message.processData.id);
+            i++;
+        }
+
+        // @ delete the following
+        // int y = i;
+        // // for (; y < count - 1; y++) // I think send makes some delay
+        // {
+        //     if (x == (prcsArray[y].arrivaltime - 1))
+        //     {
+        //         ////printf("Process %d Started at time %d \n", prcsArray[i].id, x);
+        //         // //flush(stdout);
+        //         message.processData.id = prcsArray[y].id;
+        //         message.processData.arrivaltime = prcsArray[y].arrivaltime;
+        //         message.processData.runningtime = prcsArray[y].runningtime;
+        //         message.processData.priority = prcsArray[y].priority;
+        //         // ? why should I wait?
+        //         send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
+        //         //printf("PG sending usr1 to Scheduler\n");
+
+        //         kill(sid, SIGUSR1);
+        //         i++;
+        //     }
+        // }
     }
     // printf("Process Generator ending\n");
-    while(1);// process generator ends earlier and this should be handled, now scheduler ends all processes
+    while (1)
+        ; // process generator ends earlier and this should be handled, now scheduler ends all processes
     // 5. Create a data structure for processes and provide it with its parameters.
     // 6. Send the information to the scheduler at the appropriate time.
     // 7. Clear clock resources
