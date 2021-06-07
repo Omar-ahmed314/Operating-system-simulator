@@ -169,8 +169,9 @@ int main(int argc, char *argv[])
         struct msgbuff_nproc mess_n;
         mess_n.mtype = 7;
         mess_n.arrivedProccesses = arrivedProcesses;
+        // printf("PG:: sending arrived  = %d\n",mess_n.arrivedProccesses);
         send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), !IPC_NOWAIT);
-        printf("+++ PG: arrived processes count  = %d\n",mess_n.arrivedProccesses);
+        // printf("+++ PG: arrived processes count  = %d\n",mess_n.arrivedProccesses);
         for (int g = 0; g < arrivedProcesses; g++)
         {
             message.processData.id = prcsArray[i].id;

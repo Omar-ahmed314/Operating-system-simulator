@@ -159,26 +159,24 @@ int main(int argc, char *argv[])
         // if(recievedProcess){
         //     recievedProcess = false;
         // }
-        if (prevClk != getClk())
+        if (prevClk == getClk())
         {
             continue;
         }
 
-        prevClk = getClk();
         //>>>> receive number of received processes:
         struct msgbuff_nproc msg_n;
         if (arrivedProcessesCounter < noProcesses) // there are still processes to receive
         {
-            printf("Now receiving msg.n\n");
             rec_val = msgrcv(upq_id, &msg_n, sizeof(msg_n.arrivedProccesses), 0, !IPC_NOWAIT);
-            printf("--- SC: Count of arrived proccesses received = %d\n",msg_n.arrivedProccesses);
+            // printf("--- SC: Count of arrived proccesses received = %d\n",msg_n.arrivedProccesses);
             
             for (int i = 0; i < msg_n.arrivedProccesses; i++)
             {
                 recieveProcess(0);         // no meaning for the parameter
                 arrivedProcessesCounter++; // can make it with += arriv...
             }
-            printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
+            // printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
         }
         // struct msgbuff message;
         // //struct processData process;
@@ -244,7 +242,7 @@ int main(int argc, char *argv[])
         if (currentProcess)
         {
             // @ tracing
-            printf("@@@CLK = %d: current process id = %d and PID = %d\n", getClk(), currentProcess->pData->id, currentProcess->pid);
+            // printf("@@@CLK = %d: current process id = %d and PID = %d\n", getClk(), currentProcess->pData->id, currentProcess->pid);
             // //flush(stdout);
             //context switching
             if (previousId != currentProcess->pData->id)
@@ -279,6 +277,8 @@ int main(int argc, char *argv[])
             //# //printf("PCB: ");
             // printPCB(PCB);
         }
+
+        prevClk = getClk();
         // if (getClk() == 1)
         //     //printf("Current process is %d\n", (currentProcess ? currentProcess->pData->id : -1));
 
