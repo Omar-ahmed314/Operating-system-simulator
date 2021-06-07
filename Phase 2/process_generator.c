@@ -25,7 +25,7 @@ struct msgbuff_nproc
 struct msgbuff2
 {
     long mtype;
-    int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
+    int data[4]; //data[0] = algo, data[1] = args, data[2] = no. of processes., data[3] = mem algo
 };
 
 //void clearResources(int);
@@ -97,6 +97,7 @@ int main(int argc, char *argv[])
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
     int algoNum = atoi(argv[3]);
     int algoArgs;
+    int memAlg = atoi(argv[5]);
     int pid;
     struct msgbuff2 mess;
     mess.mtype = 1;
@@ -106,8 +107,10 @@ int main(int argc, char *argv[])
     {
         algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
+        memAlg = atoi(argv[7]);
     }
     mess.data[2] = count - 1;
+    mess.data[3] = memAlg;
     // 3. Initiate and create the scheduler and clock processes.
 
     //Sending Data

@@ -11,6 +11,9 @@ void HPFAlgorithm();
 void RRAlgorithm();
 void sendRem(int remainingTime);
 void destroyRemMsg();
+void initializeMemory();
+bool allocateMemory(struct PCBNode* process);
+void freeMemory(struct PCBNode* process);
 void empty() {}
 
 
@@ -31,6 +34,7 @@ int NonActive = 0; //Variables to calculate performance
 char stateStr[10];
 FILE *pFileLog;
 FILE *pFilePerf;
+FILE *pFileMem;
 void eraseStateStr()
 {
     memset(stateStr, 0, 10);
@@ -66,7 +70,7 @@ struct msgbuff
 struct msgbuff2
 {
     long mtype;
-    int data[3]; //data[0] = algo, data[1] = args, data[2] = no. of processes.
+    int data[4]; //data[0] = algo, data[1] = args, data[2] = no. of processes., data[3] = mem algo
 };
 int downq_id_rem, rec_val_rem;
 key_t key_id_rem;
@@ -133,6 +137,8 @@ int main(int argc, char *argv[])
     //files
     pFileLog = fopen("scheduler.log", "w");
     fprintf(pFileLog, "#At time x process y state arr w total z remain y wait k\n");
+    pFileMem = fopen("memory.log", "w");
+    fprintf(pFileMem, "#At time x allocated y bytes for process z from i to j\n");
     //@ message queues
     key_id = 99;
     key_id_rem = 167;
@@ -163,6 +169,7 @@ int main(int argc, char *argv[])
     algNum = mess.data[0];
     quantum = mess.data[1];
     noProcesses = mess.data[2];
+    memAlgNum = mess.data[3];
     // runProcess();
     int clk = getClk();
     int prevClk = clk;
@@ -208,6 +215,9 @@ int main(int argc, char *argv[])
             if (currentProcess->remainingTime <= 0)
             {
                 struct PCBNode *process = currentProcess; //lazy to rewrite
+                freeMemory(process);
+                fprintf(pFileMem, "At time %d freed %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
+                process->memoryStart, process->memoryFinish);
                 setStateStr(finished);
                 int TA= getClk()-process->pData->arrivaltime;
                 float WTA=TA*1.0/process->pData->runningtime;
@@ -216,7 +226,6 @@ int main(int argc, char *argv[])
                 fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %.2g\n",
                         getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
                         process->remainingTime, process->waitingTime, TA, WTA);
-
                 if (algNum != RR) // % because it will be needed to get next one
                 {
                     deleteByID(&PCB, currentProcess->pData->id);
@@ -294,6 +303,7 @@ int main(int argc, char *argv[])
     fprintf(pFilePerf, "Avg WTA = %.3g\n", TWTA/noProcesses);
     fprintf(pFilePerf, "Avg Waiting = %.2g\n", TW/noProcesses);
     fclose(pFilePerf);
+    fclose(pFileMem);
     clearResources(SIGINT);
 }
 void stopProcess(struct PCBNode *process)
@@ -324,6 +334,11 @@ void startProcess(struct PCBNode *process)
     // fork
     if (!process->hasStarted)
     {
+        //Check for Memory first
+        if (!allocateMemory(process))
+            return;
+        fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
+                process->memoryStart, process->memoryFinish);
         process->startTime = getClk();
         int pid;
         pid = fork();
