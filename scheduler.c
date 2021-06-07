@@ -95,7 +95,7 @@ void recieveProcess(int signum)
     newProcess->hasStarted = false;
     newProcess->next = 0;
     newProcess->pid = 0;
-    newProcess->lastSeen = 0;
+    newProcess->lastSeen = getClk();
     newProcess->waitingTime = 0;
     insertNode(&PCB, newProcess);
     recievedProcess = true;
@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
             // @ tracing
             printf("@@@CLK = %d: current process id = %d and PID = %d & PCB = ", currentClk, currentProcess->pData->id, currentProcess->pid);
             printPCB(PCB);
-            printf("------- real clk = %d\n", getClk());
+            // printf("------- real clk = %d\n", getClk());
             //context switching
             if (previousId != currentProcess->pData->id)
             {
@@ -265,8 +265,8 @@ int main(int argc, char *argv[])
             currentProcess = PCB;
         }
         prevClk = currentClk;
-        printf("$$$$ @ clk = %d PCB is ",getClk());
-        printPCB(PCB);
+        // printf("$$$$ @ clk = %d PCB is ",getClk());
+        // printPCB(PCB);
         // printf("------- real clk = %d\n", getClk());
     }
     //TODO: implement the scheduler.
@@ -342,79 +342,4 @@ void sendRem(int remainingTime)
 void destroyRemMsg()
 {
     msgctl(downq_id_rem, IPC_RMID, (struct msqid_ds *)0);
-}
-
-void HPFAlgorithm() //////////NOT FINAL
-{
-    while (processesDone < noProcesses || runningPCB != NULL)
-    {
-
-        if (recievedProcess)
-        {
-            struct PCBNode *temp = PCB;
-            struct PCBNode *chosenProcess;
-            chosenProcess = temp;
-            while (temp != NULL)
-            {
-                if (temp->state == ready && temp->pData->priority < chosenProcess->pData->priority)
-                {
-                    chosenProcess = temp;
-                }
-                temp = temp->next;
-            }
-            if (runningPCB == NULL)
-            {
-                //run
-            }
-            else if (chosenProcess->pData->priority < runningPCB->pData->priority)
-            {
-                //stop running
-                //run
-            }
-            recievedProcess = false;
-        }
-    }
-}
-
-/* ========= Round-Robin Algorithm ========= */
-
-void RRAlgorithm()
-{
-    struct PCBNode *Head = PCB;
-    struct PCBNode *RunningP = Head;
-    processesDone = 0;
-    currentProcessesNumber = 0;
-    int CuTime, PrTime;
-    while (processesDone < noProcesses)
-    {
-        RunningP = Head;
-        for (int i = 0; i < currentProcessesNumber; i++)
-        { // Loop on the current processes
-            if (RunningP->state == ready && RunningP->hasStarted == false)
-            { // First run of the process
-                RunningP->hasStarted = true;
-                // run process ?
-            }
-            else if (RunningP->state == ready && RunningP->hasStarted == true)
-            { // Continue stopped process
-                // Continue process
-            }
-
-            PrTime = getClk();
-            CuTime = getClk();
-            while ((CuTime - PrTime) < quantum)
-            {
-                CuTime = getClk();
-                if (RunningP->remainingTime - (CuTime - PrTime) <= 0)
-                {
-                    RunningP->remainingTime = 0;
-                    // Delete Process
-                    currentProcessesNumber--;
-                }
-            }
-            RunningP->remainingTime -= quantum;
-            // Stop the Process
-            RunningP = RunningP->next;
-        }
-    }
 }

@@ -135,27 +135,16 @@ int main(int argc, char *argv[])
     //printf("Current Time is %d\n", x);
     //flush(stdout);
     // TODO Generation Main Loop
-    int totalRunningTime = 0;
-    for (int y = 0; y < count - 1; y++)
-    {
-        totalRunningTime += prcsArray[y].runningtime;
-    }
-    totalRunningTime = max(totalRunningTime, prcsArray[count - 2].arrivaltime + prcsArray[count - 2].runningtime);
     //printf("total running time = %d\n", totalRunningTime);
-    //flush(stdout);
     int i = 0;
-    // ! to solve error: Current Time = 59: toogle the following two lines
     int prevClk = getClk();
-    // printf("BBBBBBBefore entering PG: count = %d\n", count);
     while (i < count - 1) //condition that processes are all done
-    // while (x <= totalRunningTime)
     {
         x = getClk();
         if (x == prevClk)
         {
             continue;
         }
-        // printf("HHHHHHHHHi PG @CLK = %d\n", x);
         // entering a new second
         int arrivedProcesses = 0;
         prevClk = x;
@@ -170,7 +159,7 @@ int main(int argc, char *argv[])
         mess_n.mtype = 7;
         mess_n.arrivedProccesses = arrivedProcesses;
         // printf("PG:: sending arrived  = %d\n",mess_n.arrivedProccesses);
-        send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), !IPC_NOWAIT);
+        send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), IPC_NOWAIT);
         // printf("+++ PG: arrived processes count  = %d\n",mess_n.arrivedProccesses);
         for (int g = 0; g < arrivedProcesses; g++)
         {
@@ -183,27 +172,7 @@ int main(int argc, char *argv[])
             printf("~~PG sent process of ID = %d @clk = %d\n", message.processData.id,getClk());
             i++;
         }
-        // @ delete the following
-        // int y = i;
-        // // for (; y < count - 1; y++) // I think send makes some delay
-        // {
-        //     if (x == (prcsArray[y].arrivaltime - 1))
-        //     {
-        //         ////printf("Process %d Started at time %d \n", prcsArray[i].id, x);
-        //         // //flush(stdout);
-        //         message.processData.id = prcsArray[y].id;
-        //         message.processData.arrivaltime = prcsArray[y].arrivaltime;
-        //         message.processData.runningtime = prcsArray[y].runningtime;
-        //         message.processData.priority = prcsArray[y].priority;
-        //         // ? why should I wait?
-        //         send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
-        //         //printf("PG sending usr1 to Scheduler\n");
-
-        //         kill(sid, SIGUSR1);
-        //         i++;
-        //     }
-        // }
-    }
+       }
     printf("Process Generator ending\n");
     while (1)
         ; // process generator ends earlier and this should be handled, now scheduler ends all processes
