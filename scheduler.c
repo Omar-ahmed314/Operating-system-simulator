@@ -21,6 +21,9 @@ bool recievedProcess = false; //A flag that determines if a new process has just
 struct PCBNode *PCB = 0;
 struct PCBNode *runningPCB;
 
+float TWTA=0;
+float TW=0;
+int NonActive = 0; //Variables to calculate performance
 // File handling
 char stateStr[10];
 FILE *pFileLog;
@@ -121,7 +124,7 @@ int main(int argc, char *argv[])
     key_t key_id;
     recievedProcess = false;
     //files
-    pFileLog = fopen("Scheduler.log", "w");
+    pFileLog = fopen("scheduler.log", "w");
     fprintf(pFileLog, "#At time x process y state arr w total z remain y wait k\n");
     //@ message queues
     key_id = 99;
@@ -189,6 +192,38 @@ int main(int argc, char *argv[])
             }
             printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
         }
+        NonActive = currentClk>1&&!currentProcess?NonActive+1:NonActive;
+        if (currentProcess)
+        {
+            //@ deleting
+            currentProcess->remainingTime--;
+            sendRem(currentProcess->remainingTime);
+            if (currentProcess->remainingTime <= 0)
+            {
+                struct PCBNode *process = currentProcess; //lazy to rewrite
+                setStateStr(finished);
+                int TA= getClk()-process->pData->arrivaltime;
+                float WTA=TA*1.0/process->pData->runningtime;
+                TWTA+=WTA;
+                TW+=process->waitingTime;
+                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %.2g\n",
+                        getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
+                        process->remainingTime, process->waitingTime, TA, WTA);
+
+                if (algNum != RR) // % because it will be needed to get next one
+                {
+                    deleteByID(&PCB, currentProcess->pData->id);
+                    processesCounter++;
+                }
+                else
+                {
+                    roundRobinCounter = quantum + 1; 
+                    deleteByID(&PCB, currentProcess->pData->id);
+                    currentProcess = NULL;
+                    processesCounter++;
+                }
+            }
+        }
         if (algNum != RR)
         {
             currentProcess = findTarget(algNum, PCB);
@@ -217,37 +252,11 @@ int main(int argc, char *argv[])
                 {
                     stopProcess(previousProc);
                 }
-                else
-                {
-                }
                 startProcess(currentProcess);
                 // changes for next loop
                 previousId = currentProcess->pData->id;
             }
-            //@ deleting
-            currentProcess->remainingTime--;
-            sendRem(currentProcess->remainingTime);
-            if (currentProcess->remainingTime <= 0)
-            {
-                struct PCBNode *process = currentProcess; //lazy to rewrite
-                setStateStr(finished);
-                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d\n",
-                        getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
-                        process->remainingTime, process->waitingTime);
-
-                if (algNum != RR) // % because it will be needed to get next one
-                {
-                    deleteByID(&PCB, currentProcess->pData->id);
-                    processesCounter++;
-                }
-                else
-                {
-                    roundRobinCounter = quantum + 1; // 3afana & because it will be -- in the coming if
-                    deleteByID(&PCB, currentProcess->pData->id);
-                    currentProcess = NULL;
-                    processesCounter++;
-                }
-            }
+            
         }
         //@RR Switching
         if (algNum == RR)
@@ -273,7 +282,11 @@ int main(int argc, char *argv[])
     //TODO: upon termination release the clock resources.
     printf("Scheduler Ending\n");
     fclose(pFileLog);
-    // fclose(pFilePerf);
+    pFilePerf = fopen("scheduler.perf", "w");
+    fprintf(pFilePerf, "CPU Utilization = %.3g%%\n", (getClk()-1-NonActive)*100.0/(getClk()-1));
+    fprintf(pFilePerf, "Avg WTA = %.3g\n", TWTA/noProcesses);
+    fprintf(pFilePerf, "Avg Waiting = %.2g\n", TW/noProcesses);
+    fclose(pFilePerf);
     clearResources(SIGINT);
 }
 void stopProcess(struct PCBNode *process)
