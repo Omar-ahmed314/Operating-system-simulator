@@ -8,6 +8,7 @@ struct processData
     int arrivaltime;
     int priority;
     int runningtime;
+    int memsize;
     int id;
 };
 enum ProcessState
@@ -43,6 +44,9 @@ struct PCBNode
     int pid;              // already done in forking
     //? delete this?
     int lastSeen; //for calculating waitingTime
+
+    int memoryStart;
+    int memoryFinish;
 };
 void insertNode(struct PCBNode **head, struct PCBNode *Node) // like a queue
 {
@@ -125,6 +129,7 @@ struct PCBNode *copyNode(struct PCBNode *process)
     temp2->id = process->pData->id;
     temp2->runningtime = process->pData->runningtime;
     temp2->priority = process->pData->priority;
+    temp2->memsize = process->pData->memsize;
 
     temp->pData = temp2;
     temp->pData->id = process->pData->id;
@@ -136,6 +141,9 @@ struct PCBNode *copyNode(struct PCBNode *process)
     temp->next = process->next;
     temp->pid = process->pid;
     temp->lastSeen = process->lastSeen;
+    temp->memoryStart = process->memoryStart;
+    temp->memoryFinish = process->memoryFinish;
+    
 
     return temp;
 }

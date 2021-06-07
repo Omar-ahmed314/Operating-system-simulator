@@ -3,6 +3,7 @@
 //TODO when reading file: don't count # in any line
 #include "headers.h"
 #include "schedulerData.h"
+#include "memoryData.h"
 
 void stopProcess(struct PCBNode *);
 void startProcess(struct PCBNode *);
@@ -11,6 +12,8 @@ void RRAlgorithm();
 void sendRem(int remainingTime);
 void destroyRemMsg();
 void empty() {}
+
+
 
 int algNum, quantum;
 int noProcesses, currentProcessesNumber;
@@ -90,6 +93,7 @@ void recieveProcess(int signum)
     process->id = message.processData.id;
     process->runningtime = message.processData.runningtime;
     process->priority = message.processData.priority;
+    process->memsize = message.processData.memsize;
     // //printf("^&*process of id = %d: priority = %d\n", process ? process->id : -1, process ? process->priority : -1);
     // //flush(stdout);
     struct PCBNode *newProcess = malloc(sizeof(struct PCBNode));
@@ -100,6 +104,8 @@ void recieveProcess(int signum)
     newProcess->pid = 0;
     newProcess->lastSeen = getClk();
     newProcess->waitingTime = 0;
+    newProcess->memoryStart = -1;
+    newProcess->memoryFinish = -1;
     insertNode(&PCB, newProcess);
     recievedProcess = true;
     currentProcessesNumber++;
@@ -120,6 +126,7 @@ int main(int argc, char *argv[])
 {
     initClk();
     signal(SIGINT, clearResources);
+    initializeMemory();
     mess_rem.mtype = 3;
     key_t key_id;
     recievedProcess = false;

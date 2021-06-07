@@ -5,6 +5,7 @@ struct processData
     int arrivaltime;
     int priority;
     int runningtime;
+    int memsize;
     int id;
 };
 int cid, downq_id, upq_id, send_val, rec_val;
@@ -90,7 +91,7 @@ int main(int argc, char *argv[])
     fgets(second_line, 100, prcsFile);
     for (int i = 0; i < count; i++)
     {
-        fscanf(prcsFile, "%d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority);
+        fscanf(prcsFile, "%d %d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority, &prcsArray[i].memsize);
     }
 
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
@@ -167,6 +168,7 @@ int main(int argc, char *argv[])
             message.processData.arrivaltime = prcsArray[i].arrivaltime;
             message.processData.runningtime = prcsArray[i].runningtime;
             message.processData.priority = prcsArray[i].priority;
+            message.processData.memsize = prcsArray[i].memsize;
             // ? why should I wait?
             send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
             printf("~~PG sent process of ID = %d @clk = %d\n", message.processData.id,getClk());
