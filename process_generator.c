@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
             message.processData.priority = prcsArray[i].priority;
             // ? why should I wait?
             send_val = msgsnd(upq_id, &message, sizeof(message.processData), IPC_NOWAIT);
-            // printf("~~PG sent process of ID = %d\n", message.processData.id);
+            printf("~~PG sent process of ID = %d @clk = %d\n", message.processData.id,getClk());
             i++;
         }
         // @ delete the following

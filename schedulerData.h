@@ -16,7 +16,12 @@ enum ProcessState
     running,
     blocked
 };
-
+enum stateStrEnum{
+    started,
+    stopped,
+    resumed,
+    finished
+};
 enum Algorithm
 {
     FCFS = 1,

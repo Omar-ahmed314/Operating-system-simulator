@@ -11,19 +11,7 @@ void RRAlgorithm();
 void sendRem(int remainingTime);
 void destroyRemMsg();
 void empty() {}
-void runProcess()
-{
-    int pid;
-    pid = fork();
-    if (pid == 0)
-    {
-        execl("process.out", "process.out", "5", (char *)NULL);
-    }
-    sleep(2);
-    kill(pid, SIGSTOP);
-    sleep(5);
-    kill(pid, SIGCONT);
-}
+
 int algNum, quantum;
 int noProcesses, currentProcessesNumber;
 int processesDone; //to keep track if the program is finished
@@ -32,6 +20,38 @@ bool recievedProcess = false; //A flag that determines if a new process has just
 
 struct PCBNode *PCB = 0;
 struct PCBNode *runningPCB;
+
+// File handling
+char stateStr[10];
+FILE *pFileLog;
+FILE *pFilePerf;
+void eraseStateStr()
+{
+    memset(stateStr, 0, 10);
+}
+void setStateStr(int state)
+{
+
+    switch (state)
+    {
+    case started:
+        strcpy(stateStr, "started");
+        break;
+    case stopped:
+        strcpy(stateStr, "stopped");
+        break;
+    case resumed:
+        strcpy(stateStr, "resumed");
+        break;
+    case finished:
+        strcpy(stateStr, "finished");
+        break;
+
+    default:
+        break;
+    }
+}
+
 struct msgbuff
 {
     long mtype;
@@ -95,15 +115,14 @@ void clearResources(int signum)
 // @ Main function
 int main(int argc, char *argv[])
 {
-    // printf("mess_rem.mtype = %ld\n", mess_rem.mtype);
-    //? what should the last integer be?
-    // setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     initClk();
     signal(SIGINT, clearResources);
-    // signal(SIGUSR1, recieveProcess);
     mess_rem.mtype = 3;
     key_t key_id;
     recievedProcess = false;
+    //files
+    pFileLog = fopen("Scheduler.log", "w");
+    fprintf(pFileLog, "#At time x process y state arr w total z remain y wait k\n");
     //@ message queues
     key_id = 99;
     key_id_rem = 167;
@@ -168,7 +187,7 @@ int main(int argc, char *argv[])
                 recieveProcess(0);         // no meaning for the parameter
                 arrivedProcessesCounter++; // can make it with += arriv...
             }
-            // printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
+            printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
         }
         if (algNum != RR)
         {
@@ -189,7 +208,7 @@ int main(int argc, char *argv[])
             // @ tracing
             printf("@@@CLK = %d: current process id = %d and PID = %d & PCB = ", currentClk, currentProcess->pData->id, currentProcess->pid);
             printPCB(PCB);
-            // printf("------- real clk = %d\n", getClk());
+            printf("------- real clk = %d\n", getClk());
             //context switching
             if (previousId != currentProcess->pData->id)
             {
@@ -205,11 +224,17 @@ int main(int argc, char *argv[])
                 // changes for next loop
                 previousId = currentProcess->pData->id;
             }
-
+            //@ deleting
             currentProcess->remainingTime--;
             sendRem(currentProcess->remainingTime);
             if (currentProcess->remainingTime <= 0)
             {
+                struct PCBNode *process = currentProcess; //lazy to rewrite
+                setStateStr(finished);
+                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d\n",
+                        getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
+                        process->remainingTime, process->waitingTime);
+
                 if (algNum != RR) // % because it will be needed to get next one
                 {
                     deleteByID(&PCB, currentProcess->pData->id);
@@ -224,6 +249,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
+        //@RR Switching
         if (algNum == RR)
         {
             roundRobinCounter--;
@@ -239,12 +265,15 @@ int main(int argc, char *argv[])
             currentProcess = PCB;
         }
         prevClk = currentClk;
-
+        printf("$$$$ @ clk = %d PCB is ",getClk());
+        printPCB(PCB);
         // printf("------- real clk = %d\n", getClk());
     }
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
     printf("Scheduler Ending\n");
+    fclose(pFileLog);
+    // fclose(pFilePerf);
     clearResources(SIGINT);
 }
 void stopProcess(struct PCBNode *process)
@@ -257,6 +286,10 @@ void stopProcess(struct PCBNode *process)
         kill(process->pid, SIGSTOP);
         int id = process->pData->id;
         // //printf("@CLK = %d: stopping prcess of id = %d\n", getClk(), id);
+        setStateStr(stopped);
+        fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d\n",
+                getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
+                process->remainingTime, process->waitingTime);
     }
 }
 void startProcess(struct PCBNode *process)
@@ -282,14 +315,20 @@ void startProcess(struct PCBNode *process)
         process->pid = pid;
         sendRem(process->remainingTime);
         process->hasStarted = true;
+        setStateStr(started);
+        fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d\n",
+                getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
+                process->remainingTime, process->waitingTime);
     }
     //conitnue
     else
     {
+        setStateStr(resumed);
+        fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d\n",
+                getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
+                process->remainingTime, process->waitingTime);
         kill(process->pid, SIGCONT);
     }
-    // common
-    // //printf("@CLK = %d: starting prcess of id = %d\n", getClk(), process->pData->id);
 }
 void sendRem(int remainingTime)
 {
