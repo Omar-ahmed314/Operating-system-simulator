@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
         struct msgbuff_nproc mess_n;
         mess_n.mtype = 7;
         mess_n.arrivedProccesses = arrivedProcesses;
-        send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), IPC_NOWAIT);
-
+        send_val = msgsnd(upq_id, &mess_n, sizeof(mess_n.arrivedProccesses), !IPC_NOWAIT);
+        printf("+++ PG: arrived processes count  = %d\n",mess_n.arrivedProccesses);
         for (int g = 0; g < arrivedProcesses; g++)
         {
             message.processData.id = prcsArray[i].id;
@@ -182,7 +182,6 @@ int main(int argc, char *argv[])
             // printf("~~PG sent process of ID = %d\n", message.processData.id);
             i++;
         }
-        printf("PG ended\n");
         // @ delete the following
         // int y = i;
         // // for (; y < count - 1; y++) // I think send makes some delay
@@ -204,7 +203,7 @@ int main(int argc, char *argv[])
         //     }
         // }
     }
-    // printf("Process Generator ending\n");
+    printf("Process Generator ending\n");
     while (1)
         ; // process generator ends earlier and this should be handled, now scheduler ends all processes
     // 5. Create a data structure for processes and provide it with its parameters.
