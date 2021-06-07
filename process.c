@@ -28,7 +28,7 @@ int main(int agrc, char *argv[])
         exit(errno);
     }
     remainingtime = mess.remaining;
-    printf(">> pid = %d, RT = %d & at CLK = %d\n", getpid(), remainingtime, getClk());
+    //@ printf(">> pid = %d, RT = %d & at CLK = %d\n", getpid(), remainingtime, getClk());
     while (remainingtime > 0)
     {
         rec_val = msgrcv(downq_id, &mess, sizeof(mess.remaining), 0, !IPC_NOWAIT);
@@ -38,9 +38,9 @@ int main(int agrc, char *argv[])
             exit(errno);
         }
         remainingtime = mess.remaining;
-        printf(">>>> pid = %d RT = %d at CLK = %d\n", getpid(), remainingtime, getClk());
+        //@ printf(">>>> pid = %d RT = %d at CLK = %d\n", getpid(), remainingtime, getClk());
     }
     destroyClk(false);
-    printf("xxxxxx pid = %d terminating\n", getpid());
+     printf("xxxxxx pid = %d terminating\n", getpid());
     return 0;
 }

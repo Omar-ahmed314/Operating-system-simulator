@@ -1,11 +1,5 @@
 //TODO calculations file
-//TODO DE7K: running several times
 
-//TODO sending data will result in problems,
-// TODO so send the number of process that arrive
-//TODO at some time and after it send these processes, wait for them with msgrcv
-
-//TODO Round Robin needs modification
 //TODO when reading file: don't count # in any line
 #include "headers.h"
 #include "schedulerData.h"
@@ -156,10 +150,8 @@ int main(int argc, char *argv[])
     // @@@@@@ algorithms @@@@@
     while (processesCounter < noProcesses)
     {
-        // if(recievedProcess){
-        //     recievedProcess = false;
-        // }
-        if (prevClk == getClk())
+        int currentClk = getClk();
+        if (prevClk == currentClk)
         {
             continue;
         }
@@ -170,7 +162,7 @@ int main(int argc, char *argv[])
         {
             rec_val = msgrcv(upq_id, &msg_n, sizeof(msg_n.arrivedProccesses), 0, !IPC_NOWAIT);
             // printf("--- SC: Count of arrived proccesses received = %d\n",msg_n.arrivedProccesses);
-            
+
             for (int i = 0; i < msg_n.arrivedProccesses; i++)
             {
                 recieveProcess(0);         // no meaning for the parameter
@@ -178,72 +170,26 @@ int main(int argc, char *argv[])
             }
             // printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
         }
-        // struct msgbuff message;
-        // //struct processData process;
-        // rec_val = msgrcv(upq_id, &message, sizeof(message.processData), 0, IPC_NOWAIT);
-        // //printf("Msgrcv with no wait svalue = %d & errno = %d\n", rec_val,errno);
-
-        //# //printf("CLK = %d\n", getClk());
         if (algNum != RR)
         {
             currentProcess = findTarget(algNum, PCB);
         }
         else // round robin
         {
-            // printf("in round robin\n");
-            // printf("1\n");
             // TODO insert A in the the queue, not circular queue
             if (!currentProcess) // at the beginning of execution
             {
                 currentProcess = PCB;
             }
-            // printf("2\n");
-            roundRobinCounter--;
-            // switching or deleting
-            if (currentProcess->remainingTime <= 0)
-            {
-                roundRobinCounter = quantum;
-                deleteByID(&PCB, currentProcess->pData->id);
-                processesCounter++;
-            }
-            else if (roundRobinCounter <= 0)
-            {
-                roundRobinCounter = quantum;
 
-                struct PCBNode *ptr = copyNode(currentProcess);
-                deleteByID(&PCB, currentProcess->pData->id);
-                insertNode(&PCB, ptr);
-            }
-            // printf("3\n");
-            currentProcess = PCB;
-            // if (roundRobinCounter <= 0 || currentProcess->remainingTime <= 0)
-            // {
-            //     roundRobinCounter = quantum;
-            //     struct PCBNode *temp = currentProcess;
-            //     currentProcess = currentProcess->next;
-            //     if (temp->remainingTime <= 0)
-            //     {
-            //         deleteByID(&PCB, temp->pData->id);
-            //         processesCounter++;
-            //     }
-            //     else if (roundRobinCounter <= 0)
-            //     {
-            //         // insert to the back of the queue if quantum finished
-            //         struct PCBNode *ptr = copyNode(temp);
-            //         deleteByID(&PCB, temp->pData->id);
-            //         insertNode(&PCB, ptr);
-            //     }
-            //     if (!currentProcess)
-            //     {
-            //         currentProcess = PCB;
-            //     }
-            // }
+            // printf("***** at clk %d: Current process ID = %d\n", getClk(), currentProcess ? currentProcess->pData->id : -1);
         }
         if (currentProcess)
         {
             // @ tracing
-            // printf("@@@CLK = %d: current process id = %d and PID = %d\n", getClk(), currentProcess->pData->id, currentProcess->pid);
-            // //flush(stdout);
+            printf("@@@CLK = %d: current process id = %d and PID = %d & PCB = ", currentClk, currentProcess->pData->id, currentProcess->pid);
+            printPCB(PCB);
+            // printf("------- real clk = %d\n", getClk());
             //context switching
             if (previousId != currentProcess->pData->id)
             {
@@ -251,39 +197,50 @@ int main(int argc, char *argv[])
                 if (previousProc)
                 {
                     stopProcess(previousProc);
-                    //# //printf("Previous process ID = %d\n", previousProc->pData->id);
                 }
                 else
                 {
-                    //# //printf("Previous process is already deleted\n");
                 }
                 startProcess(currentProcess);
                 // changes for next loop
                 previousId = currentProcess->pData->id;
             }
-            // printf("4\n");
 
             currentProcess->remainingTime--;
             sendRem(currentProcess->remainingTime);
             if (currentProcess->remainingTime <= 0)
             {
-                //# //printf("deleted process of ID %d\n", currentProcess->pData->id);
                 if (algNum != RR) // % because it will be needed to get next one
                 {
                     deleteByID(&PCB, currentProcess->pData->id);
                     processesCounter++;
                 }
+                else
+                {
+                    roundRobinCounter = quantum + 1; // 3afana & because it will be -- in the coming if
+                    deleteByID(&PCB, currentProcess->pData->id);
+                    currentProcess = NULL;
+                    processesCounter++;
+                }
             }
-            //# //printf("PCB: ");
-            // printPCB(PCB);
         }
+        if (algNum == RR)
+        {
+            roundRobinCounter--;
+            if (roundRobinCounter <= 0)
+            {
+                roundRobinCounter = quantum;
 
-        prevClk = getClk();
-        // if (getClk() == 1)
-        //     //printf("Current process is %d\n", (currentProcess ? currentProcess->pData->id : -1));
+                struct PCBNode *ptr = copyNode(currentProcess);
+                ptr->next = NULL;
+                deleteByID(&PCB, currentProcess->pData->id);
+                insertNode(&PCB, ptr);
+            }
+            currentProcess = PCB;
+        }
+        prevClk = currentClk;
 
-        // //printf("--- @CLK = %d-> PCB is:", getClk());
-        // printPCB(PCB);
+        // printf("------- real clk = %d\n", getClk());
     }
     //TODO: implement the scheduler.
     //TODO: upon termination release the clock resources.
