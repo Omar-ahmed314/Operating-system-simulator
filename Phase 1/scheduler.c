@@ -119,6 +119,7 @@ void clearResources(int signum)
 int main(int argc, char *argv[])
 {
     initClk();
+    printf("SSSSSSSSSSSSS Scheduler starts @Clk = %d\n",getClk());
     signal(SIGINT, clearResources);
     mess_rem.mtype = 3;
     key_t key_id;
@@ -157,8 +158,7 @@ int main(int argc, char *argv[])
     quantum = mess.data[1];
     noProcesses = mess.data[2];
     // runProcess();
-    int clk = getClk();
-    int prevClk = clk;
+    int prevClk = 0;
     struct PCBNode *currentProcess = NULL;
     printf("Total number of processes = %d\n", noProcesses);
     printf("algorithm number = %d\n", algNum);
