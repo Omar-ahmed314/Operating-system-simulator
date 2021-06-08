@@ -171,8 +171,7 @@ int main(int argc, char *argv[])
     noProcesses = mess.data[2];
     memAlgNum = mess.data[3];
     // runProcess();
-    int clk = getClk();
-    int prevClk = clk;
+    int prevClk = 0;
     struct PCBNode *currentProcess = NULL;
     printf("Total number of processes = %d\n", noProcesses);
     printf("algorithm number = %d\n", algNum);
