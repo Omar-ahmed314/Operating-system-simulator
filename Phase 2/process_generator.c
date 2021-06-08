@@ -116,8 +116,15 @@ int main(int argc, char *argv[])
     //Sending Data
 
     send_val = msgsnd(upq_id, &mess, sizeof(mess.data), !IPC_NOWAIT);
-    // initialize the clock
+    // initialize the scheduler
     int sid = 0;
+    pid = fork();
+    sid = pid;
+    if (pid == 0)
+    {
+        execl("scheduler.out", "scheduler.out", (char *)NULL);
+    }
+    // initialize the clock
     message.mtype = 2;
     pid = fork();
     cid = pid;
@@ -125,13 +132,7 @@ int main(int argc, char *argv[])
     {
         execl("clk.out", "clk.out", (char *)NULL);
     }
-    // initialize the scheduler
-    pid = fork();
-    sid = pid;
-    if (pid == 0)
-    {
-        execl("scheduler.out", "scheduler.out", (char *)NULL);
-    }
+
     // 4. Use this function after creating the clock process to initialize clock.
     initClk();
     // To get time use this function.
