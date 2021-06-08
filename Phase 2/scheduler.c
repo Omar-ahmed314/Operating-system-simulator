@@ -15,7 +15,10 @@ void initializeMemory();
 bool allocateMemory(struct PCBNode* process);
 void freeMemory(struct PCBNode* process);
 void empty() {}
+void allocateWaitingProcesses();
 
+void deleteFromWaitingQ(struct PCBNode* process);
+//void InsertIntoPCBbyAT(struct PCBNode* process);
 
 
 int algNum, quantum;
@@ -25,6 +28,7 @@ int processesDone; //to keep track if the program is finished
 bool recievedProcess = false; //A flag that determines if a new process has just been recieved
 
 struct PCBNode *PCB = 0;
+struct PCBNode *waitingQHead = NULL;
 struct PCBNode *runningPCB;
 
 float TWTA=0;
@@ -110,8 +114,16 @@ void recieveProcess(int signum)
     newProcess->waitingTime = 0;
     newProcess->memoryStart = -1;
     newProcess->memoryFinish = -1;
-    insertNode(&PCB, newProcess);
-    recievedProcess = true;
+    if (allocateMemory(newProcess))
+    {
+        insertNode(&PCB, newProcess);
+        recievedProcess = true;
+    }
+    else
+    {
+        insertNode(&waitingQHead, newProcess);
+    }
+    
     currentProcessesNumber++;
     // printf("received msg from PG\n");
     // printPCB(PCB);
@@ -190,7 +202,7 @@ int main(int argc, char *argv[])
         {
             continue;
         }
-
+       
         //>>>> receive number of received processes:
         struct msgbuff_nproc msg_n;
         if (arrivedProcessesCounter < noProcesses) // there are still processes to receive
@@ -215,6 +227,7 @@ int main(int argc, char *argv[])
             {
                 struct PCBNode *process = currentProcess; //lazy to rewrite
                 freeMemory(process);
+                allocateWaitingProcesses();
                 fprintf(pFileMem, "At time %d freed %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
                 process->memoryStart, process->memoryFinish);
                 setStateStr(finished);
@@ -334,8 +347,8 @@ void startProcess(struct PCBNode *process)
     if (!process->hasStarted)
     {
         //Check for Memory first
-        if (!allocateMemory(process))
-            return;
+        // if (!allocateMemory(process))
+        //     return;
         fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
                 process->memoryStart, process->memoryFinish);
         process->startTime = getClk();
@@ -377,3 +390,45 @@ void destroyRemMsg()
 {
     msgctl(downq_id_rem, IPC_RMID, (struct msqid_ds *)0);
 }
+
+void allocateWaitingProcesses()
+{
+    struct PCBNode* temp = waitingQHead;
+    while (temp)
+    {
+        if(allocateMemory(temp))
+        {
+            deleteFromWaitingQ(temp);
+            insertNode(&PCB, temp);
+            //DeleteFromWaitingQ
+            //InsertIntoPCB
+        }
+        temp=temp->next;
+    }
+}
+
+void deleteFromWaitingQ(struct PCBNode* process)
+{
+    if (process == waitingQHead)
+    {
+        waitingQHead = waitingQHead->next;
+        return;
+    }
+    struct PCBNode* temp = waitingQHead->next;
+    struct PCBNode* prev = waitingQHead;
+    while (temp)
+    {
+        if (process == temp)
+        {
+            prev->next = temp->next;
+            return;
+        }
+        prev=temp;
+        temp=temp->next;
+    }
+}
+
+// void InsertIntoPCBbyAT(struct PCBNode* process)
+// {
+//     // if (process->pData->arrivaltime < PCB->pData->)
+// }
