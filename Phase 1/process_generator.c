@@ -71,13 +71,16 @@ int main(int argc, char *argv[])
     // count the process of the file
     int count = 0;
     char first_line[100];
-    fgets(first_line, 100, prcsFile);
+     //fgets(first_line, 100, prcsFile);
     while (!feof(prcsFile))
     {
         fgets(first_line, 100, prcsFile);
         // count number of proceses:
-        // if(first_line[0]!='#')
-        count++;
+        if(first_line[0]!='#' && strcmp(first_line,"\n") && first_line[0] != '\0')// && strcmp(first_line,""))
+            count++;
+
+        memset(first_line, '\0', 100);
+        
     }
 
     // initialize the process array with calloc
@@ -86,13 +89,17 @@ int main(int argc, char *argv[])
 
     prcsFile = fopen(argv[1], "r");
 
-    char second_line[100];
-    fgets(second_line, 100, prcsFile);
+    //fgets(second_line, 100, prcsFile);
+   
     for (int i = 0; i < count; i++)
     {
-        fscanf(prcsFile, "%d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority);
+        fgets(first_line, 100, prcsFile);
+        if(first_line[0]!='#' && strcmp(first_line,"\n") && first_line[0] != '\0')
+            sscanf(first_line, "%d %d %d %d", &prcsArray[i].id, &prcsArray[i].arrivaltime, &prcsArray[i].runningtime, &prcsArray[i].priority);
+        else
+            i--;
+        memset(first_line, 0, 100);
     }
-
     // 2. Read the chosen scheduling algorithm and its parameters, if there are any from the argument list.
     int algoNum = atoi(argv[3]);
     int algoArgs;
@@ -106,7 +113,7 @@ int main(int argc, char *argv[])
         algoArgs = atoi(argv[5]);
         mess.data[1] = algoArgs;
     }
-    mess.data[2] = count - 1;
+    mess.data[2] = count;
     // 3. Initiate and create the scheduler and clock processes.
 
     //Sending Data
@@ -139,7 +146,7 @@ int main(int argc, char *argv[])
     //printf("total running time = %d\n", totalRunningTime);
     int i = 0;
     int prevClk = getClk();
-    while (i < count - 1) //condition that processes are all done
+    while (i < count) //condition that processes are all done
     {
         x = getClk();
         if (x == prevClk)
@@ -149,7 +156,7 @@ int main(int argc, char *argv[])
         // entering a new second
         int arrivedProcesses = 0;
         prevClk = x;
-        for (int g = i; g < count - 1; g++)
+        for (int g = i; g < count; g++)
         {
             if (x == (prcsArray[g].arrivaltime))
             {

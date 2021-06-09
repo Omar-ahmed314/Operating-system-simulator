@@ -29,12 +29,15 @@ void writeToMemory(int start, int finish)
         {
             memory[i] = '1';
         }
+        totalAllocatedMemory+=(finish+1) + (1024-start);
         return;
     }
     for (int i=start; i<= finish; i++)
     {
         memory[i] = '1';
     }
+    totalAllocatedMemory += finish+1-start;
+    
 }
 
 bool FFAlgorithm(struct PCBNode* process)
@@ -101,8 +104,9 @@ bool BFAlgorithm(struct PCBNode* process)
     int start=0;
     int finish=0;
     int bestStart=0;
-    int bestEnd=1023;
+    int bestEnd=1024;
     int size = process->pData->memsize;
+    bool foundPartition=false;
     for (int i=0; i<1024; i++)
     {
         if (memory[i] == '0')
@@ -116,12 +120,14 @@ bool BFAlgorithm(struct PCBNode* process)
         }
         if ((i==1023 || memory[i+1] == '1') && finish+1-start >= size && finish-start < bestEnd-bestStart)
         {
+            printf("FOUND PARTITION FROM %d to %d\n", start,finish);
             bestStart = start;
             bestEnd = finish;
+            foundPartition=true;
         }
     }
     
-    if (bestEnd+1-bestStart < size)
+    if (!foundPartition || bestEnd+1-bestStart < size)
         return false;    
     writeToMemory(bestStart, bestStart+size-1);
     process->memoryStart=bestStart;
@@ -189,12 +195,15 @@ void freeMemory(struct PCBNode* process)
         {
             memory[i] = '0';
         }
+        totalAllocatedMemory-=(finish+1) + (1024-start);
         return;
+        
     }
     for (int i=start; i<= finish; i++)
     {
         memory[i] = '0';
     }
+    totalAllocatedMemory-=finish+1-start;
 }
 
 bool allocateMemory(struct PCBNode* process)

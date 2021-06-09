@@ -101,6 +101,7 @@ void recieveProcess(int signum)
     process->id = message.processData.id;
     process->runningtime = message.processData.runningtime;
     process->priority = message.processData.priority;
+    
     process->memsize = message.processData.memsize;
     // //printf("^&*process of id = %d: priority = %d\n", process ? process->id : -1, process ? process->priority : -1);
     // //flush(stdout);
@@ -114,14 +115,22 @@ void recieveProcess(int signum)
     newProcess->waitingTime = 0;
     newProcess->memoryStart = -1;
     newProcess->memoryFinish = -1;
+    newProcess->remainingTime = process->runningtime;
     if (allocateMemory(newProcess))
     {
+        fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), newProcess->pData->memsize, newProcess->pData->id,
+                newProcess->memoryStart, newProcess->memoryFinish);
         insertNode(&PCB, newProcess);
         recievedProcess = true;
     }
     else
     {
+       
         insertNode(&waitingQHead, newProcess);
+         printf("Process %d Inserted into waiting list, PCB: ", newProcess->pData->id);
+        printPCB(PCB);
+        printf("Waiting: ");
+        printPCB(waitingQHead);
     }
     
     currentProcessesNumber++;
@@ -227,9 +236,9 @@ int main(int argc, char *argv[])
             {
                 struct PCBNode *process = currentProcess; //lazy to rewrite
                 freeMemory(process);
-                allocateWaitingProcesses();
                 fprintf(pFileMem, "At time %d freed %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
                 process->memoryStart, process->memoryFinish);
+                allocateWaitingProcesses();
                 setStateStr(finished);
                 int TA= getClk()-process->pData->arrivaltime;
                 float WTA=TA*1.0/process->pData->runningtime;
@@ -245,7 +254,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    roundRobinCounter = quantum + 1; 
+                    roundRobinCounter = quantum; 
                     deleteByID(&PCB, currentProcess->pData->id);
                     currentProcess = NULL;
                     processesCounter++;
@@ -265,6 +274,21 @@ int main(int argc, char *argv[])
             }
 
             // printf("***** at clk %d: Current process ID = %d\n", getClk(), currentProcess ? currentProcess->pData->id : -1);
+        }
+         //@RR Switching
+        if (algNum == RR)
+        {
+            if (roundRobinCounter <= 0)
+            {
+                roundRobinCounter = quantum;
+
+                struct PCBNode *ptr = copyNode(currentProcess);
+                ptr->next = NULL;
+                deleteByID(&PCB, currentProcess->pData->id);
+                insertNode(&PCB, ptr);
+            }
+            roundRobinCounter--;
+            currentProcess = PCB;
         }
         if (currentProcess)
         {
@@ -286,21 +310,7 @@ int main(int argc, char *argv[])
             }
             
         }
-        //@RR Switching
-        if (algNum == RR)
-        {
-            roundRobinCounter--;
-            if (roundRobinCounter <= 0)
-            {
-                roundRobinCounter = quantum;
-
-                struct PCBNode *ptr = copyNode(currentProcess);
-                ptr->next = NULL;
-                deleteByID(&PCB, currentProcess->pData->id);
-                insertNode(&PCB, ptr);
-            }
-            currentProcess = PCB;
-        }
+       
         prevClk = currentClk;
         // printf("$$$$ @ clk = %d PCB is ",getClk());
         // printPCB(PCB);
@@ -349,8 +359,7 @@ void startProcess(struct PCBNode *process)
         //Check for Memory first
         // if (!allocateMemory(process))
         //     return;
-        fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
-                process->memoryStart, process->memoryFinish);
+        
         process->startTime = getClk();
         int pid;
         pid = fork();
@@ -358,7 +367,7 @@ void startProcess(struct PCBNode *process)
         {
             execl("process.out", "process.out", (char *)NULL);
         }
-        process->remainingTime = process->pData->runningtime;
+        //process->remainingTime = process->pData->runningtime;
         process->pid = pid;
         sendRem(process->remainingTime);
         process->hasStarted = true;
@@ -398,8 +407,15 @@ void allocateWaitingProcesses()
     {
         if(allocateMemory(temp))
         {
+            fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->pData->memsize, temp->pData->id,
+                temp->memoryStart, temp->memoryFinish);
             deleteFromWaitingQ(temp);
+            temp->next=NULL;
             insertNode(&PCB, temp);
+            printf("Process %d removed from waiting list, PCB: ", temp->pData->id);
+            printPCB(PCB);
+            printf("Waiting: ");
+            printPCB(waitingQHead);
             //DeleteFromWaitingQ
             //InsertIntoPCB
         }
@@ -409,6 +425,8 @@ void allocateWaitingProcesses()
 
 void deleteFromWaitingQ(struct PCBNode* process)
 {
+    
+
     if (process == waitingQHead)
     {
         waitingQHead = waitingQHead->next;
