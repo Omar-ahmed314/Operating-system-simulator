@@ -1,6 +1,3 @@
-//TODO calculations file
-
-//TODO when reading file: don't count # in any line
 #include "headers.h"
 #include "schedulerData.h"
 #include "memoryData.h"
@@ -12,14 +9,17 @@ void RRAlgorithm();
 void sendRem(int remainingTime);
 void destroyRemMsg();
 void initializeMemory();
-bool allocateMemory(struct PCBNode* process);
-void freeMemory(struct PCBNode* process);
+bool allocateMemory(struct PCBNode *process);
+void freeMemory(struct PCBNode *process);
 void empty() {}
 void allocateWaitingProcesses();
 
-void deleteFromWaitingQ(struct PCBNode* process);
+void deleteFromWaitingQ(struct PCBNode *process);
 //void InsertIntoPCBbyAT(struct PCBNode* process);
 
+void terminateZeros(char arr[], float x);
+char tempStr1[10];
+char tempStr2[10];
 
 int algNum, quantum;
 int noProcesses, currentProcessesNumber;
@@ -31,8 +31,8 @@ struct PCBNode *PCB = 0;
 struct PCBNode *waitingQHead = NULL;
 struct PCBNode *runningPCB;
 
-float TWTA=0;
-float TW=0;
+float TWTA = 0;
+float TW = 0;
 int NonActive = 0; //Variables to calculate performance
 // File handling
 char stateStr[10];
@@ -101,7 +101,7 @@ void recieveProcess(int signum)
     process->id = message.processData.id;
     process->runningtime = message.processData.runningtime;
     process->priority = message.processData.priority;
-    
+
     process->memsize = message.processData.memsize;
     // //printf("^&*process of id = %d: priority = %d\n", process ? process->id : -1, process ? process->priority : -1);
     // //flush(stdout);
@@ -125,14 +125,14 @@ void recieveProcess(int signum)
     }
     else
     {
-       
+
         insertNode(&waitingQHead, newProcess);
-         printf("Process %d Inserted into waiting list, PCB: ", newProcess->pData->id);
+        printf("Process %d Inserted into waiting list, PCB: ", newProcess->pData->id);
         printPCB(PCB);
         printf("Waiting: ");
         printPCB(waitingQHead);
     }
-    
+
     currentProcessesNumber++;
     // printf("received msg from PG\n");
     // printPCB(PCB);
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
         {
             continue;
         }
-       
+
         //>>>> receive number of received processes:
         struct msgbuff_nproc msg_n;
         if (arrivedProcessesCounter < noProcesses) // there are still processes to receive
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
             }
             printf("At CLK %d, %d processes arrived. now count(PCB) = %d\n", getClk(), msg_n.arrivedProccesses, countPCB(PCB));
         }
-        NonActive = currentClk>1&&!currentProcess?NonActive+1:NonActive;
+        NonActive = currentClk > 1 && !currentProcess ? NonActive + 1 : NonActive;
         if (currentProcess)
         {
             //@ deleting
@@ -237,16 +237,17 @@ int main(int argc, char *argv[])
                 struct PCBNode *process = currentProcess; //lazy to rewrite
                 freeMemory(process);
                 fprintf(pFileMem, "At time %d freed %d bytes for process %d from %d to %d\n", getClk(), process->pData->memsize, process->pData->id,
-                process->memoryStart, process->memoryFinish);
+                        process->memoryStart, process->memoryFinish);
                 allocateWaitingProcesses();
                 setStateStr(finished);
-                int TA= getClk()-process->pData->arrivaltime;
-                float WTA=TA*1.0/process->pData->runningtime;
-                TWTA+=WTA;
-                TW+=process->waitingTime;
-                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %.2g\n",
+                int TA = getClk() - process->pData->arrivaltime;
+                float WTA = TA * 1.0 / process->pData->runningtime;
+                TWTA += WTA;
+                TW += process->waitingTime;
+                terminateZeros(tempStr1,WTA);
+                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %s\n",
                         getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
-                        process->remainingTime, process->waitingTime, TA, WTA);
+                        process->remainingTime, process->waitingTime, TA, tempStr1);
                 if (algNum != RR) // % because it will be needed to get next one
                 {
                     deleteByID(&PCB, currentProcess->pData->id);
@@ -254,7 +255,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    roundRobinCounter = quantum; 
+                    roundRobinCounter = quantum;
                     deleteByID(&PCB, currentProcess->pData->id);
                     currentProcess = NULL;
                     processesCounter++;
@@ -275,7 +276,7 @@ int main(int argc, char *argv[])
 
             // printf("***** at clk %d: Current process ID = %d\n", getClk(), currentProcess ? currentProcess->pData->id : -1);
         }
-         //@RR Switching
+        //@RR Switching
         if (algNum == RR)
         {
             if (roundRobinCounter <= 0)
@@ -308,9 +309,8 @@ int main(int argc, char *argv[])
                 // changes for next loop
                 previousId = currentProcess->pData->id;
             }
-            
         }
-       
+
         prevClk = currentClk;
         // printf("$$$$ @ clk = %d PCB is ",getClk());
         // printPCB(PCB);
@@ -321,9 +321,16 @@ int main(int argc, char *argv[])
     printf("Scheduler Ending\n");
     fclose(pFileLog);
     pFilePerf = fopen("scheduler.perf", "w");
-    fprintf(pFilePerf, "CPU Utilization = %.3g%%\n", (getClk()-1-NonActive)*100.0/(getClk()-1));
-    fprintf(pFilePerf, "Avg WTA = %.3g\n", TWTA/noProcesses);
-    fprintf(pFilePerf, "Avg Waiting = %.2g\n", TW/noProcesses);
+    //CPU utilization
+    terminateZeros(tempStr1, (getClk() - 1 - NonActive) * 100.0 / (getClk() - 1));
+    fprintf(pFilePerf, "CPU Utilization = %s%%\n", tempStr1);
+    //AVG WTA
+    terminateZeros(tempStr1, TWTA / noProcesses);
+    fprintf(pFilePerf, "Avg WTA = %s\n", tempStr1);
+    // AVG waiting
+    terminateZeros(tempStr1, TW / noProcesses);
+    fprintf(pFilePerf, "Avg Waiting = %s\n", tempStr1);
+
     fclose(pFilePerf);
     fclose(pFileMem);
     clearResources(SIGINT);
@@ -359,7 +366,7 @@ void startProcess(struct PCBNode *process)
         //Check for Memory first
         // if (!allocateMemory(process))
         //     return;
-        
+
         process->startTime = getClk();
         int pid;
         pid = fork();
@@ -402,15 +409,15 @@ void destroyRemMsg()
 
 void allocateWaitingProcesses()
 {
-    struct PCBNode* temp = waitingQHead;
+    struct PCBNode *temp = waitingQHead;
     while (temp)
     {
-        if(allocateMemory(temp))
+        if (allocateMemory(temp))
         {
             fprintf(pFileMem, "At time %d allocated %d bytes for process %d from %d to %d\n", getClk(), temp->pData->memsize, temp->pData->id,
-                temp->memoryStart, temp->memoryFinish);
+                    temp->memoryStart, temp->memoryFinish);
             deleteFromWaitingQ(temp);
-            temp->next=NULL;
+            temp->next = NULL;
             insertNode(&PCB, temp);
             printf("Process %d removed from waiting list, PCB: ", temp->pData->id);
             printPCB(PCB);
@@ -419,21 +426,20 @@ void allocateWaitingProcesses()
             //DeleteFromWaitingQ
             //InsertIntoPCB
         }
-        temp=temp->next;
+        temp = temp->next;
     }
 }
 
-void deleteFromWaitingQ(struct PCBNode* process)
+void deleteFromWaitingQ(struct PCBNode *process)
 {
-    
 
     if (process == waitingQHead)
     {
         waitingQHead = waitingQHead->next;
         return;
     }
-    struct PCBNode* temp = waitingQHead->next;
-    struct PCBNode* prev = waitingQHead;
+    struct PCBNode *temp = waitingQHead->next;
+    struct PCBNode *prev = waitingQHead;
     while (temp)
     {
         if (process == temp)
@@ -441,11 +447,26 @@ void deleteFromWaitingQ(struct PCBNode* process)
             prev->next = temp->next;
             return;
         }
-        prev=temp;
-        temp=temp->next;
+        prev = temp;
+        temp = temp->next;
     }
 }
-
+void terminateZeros(char arr[], float x)
+{
+    memset(arr, 0, 10);
+    sprintf(arr, "%0.2f", x);
+    int i = 0;
+    while (arr[i++] != '.') //finding first decimal
+        ;
+    if (arr[i + 1] == '0') // 1.10 -> 1
+    {
+        arr[i + 1] = 0;
+        if (arr[i] == '0') // 1.00 -> 1
+        {
+            arr[i - 1] = arr[i] = 0;
+        }
+    }
+}
 // void InsertIntoPCBbyAT(struct PCBNode* process)
 // {
 //     // if (process->pData->arrivaltime < PCB->pData->)

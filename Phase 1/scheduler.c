@@ -1,6 +1,3 @@
-//TODO calculations file
-
-//TODO when reading file: don't count # in any line
 #include "headers.h"
 #include "schedulerData.h"
 
@@ -11,7 +8,9 @@ void RRAlgorithm();
 void sendRem(int remainingTime);
 void destroyRemMsg();
 void empty() {}
-
+void terminateZeros(char arr[], float x);
+char tempStr1[10];
+char tempStr2[10];
 int algNum, quantum;
 int noProcesses, currentProcessesNumber;
 int processesDone; //to keep track if the program is finished
@@ -207,9 +206,10 @@ int main(int argc, char *argv[])
                 float WTA=TA*1.0/process->pData->runningtime;
                 TWTA+=WTA;
                 TW+=process->waitingTime;
-                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %.2g\n",
+                terminateZeros(tempStr1,WTA);
+                fprintf(pFileLog, "At time %d process %d %s arr %d total %d remain %d wait %d TA %d WTA %s\n",
                         getClk(), process->pData->id, stateStr, process->pData->arrivaltime, process->pData->runningtime,
-                        process->remainingTime, process->waitingTime, TA, WTA);
+                        process->remainingTime, process->waitingTime, TA, tempStr1);
 
                 if (algNum != RR) // % because it will be needed to get next one
                 {
@@ -287,9 +287,15 @@ int main(int argc, char *argv[])
     printf("Scheduler Ending\n");
     fclose(pFileLog);
     pFilePerf = fopen("scheduler.perf", "w");
-    fprintf(pFilePerf, "CPU Utilization = %.3g%%\n", (getClk()-1-NonActive)*100.0/(getClk()-1));
-    fprintf(pFilePerf, "Avg WTA = %.3g\n", TWTA/noProcesses);
-    fprintf(pFilePerf, "Avg Waiting = %.2g\n", TW/noProcesses);
+    //CPU utilization
+    terminateZeros(tempStr1,(getClk()-1-NonActive)*100.0/(getClk()-1));
+    fprintf(pFilePerf, "CPU Utilization = %s%%\n", tempStr1);
+    //AVG WTA
+    terminateZeros(tempStr1,TWTA/noProcesses);
+    fprintf(pFilePerf, "Avg WTA = %s\n", tempStr1);
+    // AVG waiting
+    terminateZeros(tempStr1, TW/noProcesses);
+    fprintf(pFilePerf, "Avg Waiting = %s\n",tempStr1);
     fclose(pFilePerf);
     clearResources(SIGINT);
 }
@@ -359,4 +365,20 @@ void sendRem(int remainingTime)
 void destroyRemMsg()
 {
     msgctl(downq_id_rem, IPC_RMID, (struct msqid_ds *)0);
+}
+void terminateZeros(char arr[], float x)
+{
+    memset(arr, 0, 10);
+    sprintf(arr, "%0.2f", x);
+    int i = 0;
+    while (arr[i++] != '.') //finding first decimal
+        ;
+    if (arr[i + 1] == '0') // 1.10 -> 1
+    {
+        arr[i + 1] = 0;
+        if (arr[i] == '0') // 1.00 -> 1
+        {
+            arr[i - 1] = arr[i] = 0;
+        }
+    }
 }
