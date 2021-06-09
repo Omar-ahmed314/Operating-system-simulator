@@ -100,6 +100,7 @@ void recieveProcess(int signum)
     newProcess->pid = 0;
     newProcess->lastSeen = getClk();
     newProcess->waitingTime = 0;
+    newProcess->remainingTime = process->runningtime;
     insertNode(&PCB, newProcess);
     recievedProcess = true;
     currentProcessesNumber++;
@@ -217,7 +218,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
-                    roundRobinCounter = quantum + 1; 
+                    roundRobinCounter = quantum; 
                     deleteByID(&PCB, currentProcess->pData->id);
                     currentProcess = NULL;
                     processesCounter++;
@@ -238,6 +239,23 @@ int main(int argc, char *argv[])
 
             // printf("***** at clk %d: Current process ID = %d\n", getClk(), currentProcess ? currentProcess->pData->id : -1);
         }
+        //@RR Switching
+        if (algNum == RR)
+        {
+            
+            if (roundRobinCounter <= 0)
+            {
+                roundRobinCounter = quantum;
+
+                struct PCBNode *ptr = copyNode(currentProcess);
+                ptr->next = NULL;
+                deleteByID(&PCB, currentProcess->pData->id);
+                insertNode(&PCB, ptr);
+            }
+            roundRobinCounter--;
+            currentProcess = PCB;
+        }
+
         if (currentProcess)
         {
             // @ tracing
@@ -258,21 +276,7 @@ int main(int argc, char *argv[])
             }
             
         }
-        //@RR Switching
-        if (algNum == RR)
-        {
-            roundRobinCounter--;
-            if (roundRobinCounter <= 0)
-            {
-                roundRobinCounter = quantum;
-
-                struct PCBNode *ptr = copyNode(currentProcess);
-                ptr->next = NULL;
-                deleteByID(&PCB, currentProcess->pData->id);
-                insertNode(&PCB, ptr);
-            }
-            currentProcess = PCB;
-        }
+        
         prevClk = currentClk;
         // printf("$$$$ @ clk = %d PCB is ",getClk());
         // printPCB(PCB);
@@ -324,7 +328,7 @@ void startProcess(struct PCBNode *process)
         {
             execl("process.out", "process.out", (char *)NULL);
         }
-        process->remainingTime = process->pData->runningtime;
+        //process->remainingTime = process->pData->runningtime;
         process->pid = pid;
         sendRem(process->remainingTime);
         process->hasStarted = true;
